@@ -1,0 +1,12 @@
+{
+    "emeraldwalk.runonsave": {
+        "commands": [
+            {
+                "match": "Main.elm$",
+                "cmd": "elm make ${relativeFile}"
+            }
+        ]
+    },
+    "editor.formatOnSave": true,
+    "files.autoSave": "onFocusChange"
+}
