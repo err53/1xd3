@@ -75,7 +75,7 @@ jobs:
         run: npx --no-install elm-tooling install
 
       - name: elm-format
-        run: npx --no-install elm-format --validate src tests
+        run: npx --no-install elm-format --validate src
       
       - name: build
         run: npm run build
