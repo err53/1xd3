@@ -1,11 +1,5 @@
 {
-    "emeraldwalk.runonsave": {
-        "commands": [
-            {
-                "match": "Main.elm$",
-                "cmd": "elm make ${relativeFile}"
-            }
-        ]
-    },
-    "files.autoSave": "onFocusChange"
+    "editor.detectIndentation": false,
+    "editor.insertSpaces": true,
+    "editor.tabSize": 4
 }
