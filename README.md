@@ -2,6 +2,11 @@
 
 [![CI](https://github.com/err53/1xd3/actions/workflows/main.yml/badge.svg?branch=main)](https://github.com/err53/1xd3/actions/workflows/main.yml)
 
+[![forthebadge](https://forthebadge.com/images/badges/built-with-resentment.svg)](https://forthebadge.com)
+[![forthebadge](https://forthebadge.com/images/badges/contains-tasty-spaghetti-code.svg)](https://forthebadge.com)
+[![forthebadge](https://forthebadge.com/images/badges/made-with-crayons.svg)](https://forthebadge.com)
+[![forthebadge](https://forthebadge.com/images/badges/60-percent-of-the-time-works-every-time.svg)](https://forthebadge.com)
+
 See the current deployment here:
 https://err53.github.io/1xd3/
 
