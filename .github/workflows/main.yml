@@ -27,12 +27,12 @@ jobs:
         uses: JorelAli/setup-elm@v3
 
       - name: Build HTML
-        run: elm make src/Main.elm --optimize --output=public/index.html
+        run: elm make src/Main.elm --optimize --output=dist/index.html
         
       - name: Deploy to GitHub Pages
         uses: crazy-max/ghaction-github-pages@v2.6.0
         with: 
-          build_dir: public
+          build_dir: dist
           jekyll: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
