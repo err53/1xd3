@@ -11,13 +11,12 @@ import Element.Events as Events
 import Element.Font as Font
 import Element.Input as Input
 import Element.Region as Region
+import Fongf2.DraggableItem
 import GraphicSVG exposing (..)
 import GraphicSVG.EllieApp exposing (..)
 import GraphicSVG.Widget as Widget
 import Task
 import Time
-
-import Fongf2.DraggableItem
 
 
 type alias Model =
