@@ -1,5 +1,7 @@
 # 1XD3 Project
 
+[![CI](https://github.com/err53/1xd3/actions/workflows/main.yml/badge.svg?branch=main)](https://github.com/err53/1xd3/actions/workflows/main.yml)
+
 See the current deployment here:
 https://err53.github.io/1xd3/
 
