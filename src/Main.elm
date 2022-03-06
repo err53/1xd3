@@ -17,6 +17,8 @@ import GraphicSVG.Widget as Widget
 import Task
 import Time
 
+import Fongf2.DraggableItem
+
 
 type alias Model =
     { time : Float
