@@ -6,4 +6,4 @@ Run `elm reactor` to start a local web server for testing.
 
 ## Deployment
 
-Run `elm build` to build the Elm app.
+Run `elm make src/Main.elm --optimize --output=build/index.html` to build the optimized Elm app.

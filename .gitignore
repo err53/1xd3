@@ -101,5 +101,5 @@ $RECYCLE.BIN/
 
 # End of https://www.toptal.com/developers/gitignore/api/elm,linux,macos,windows,visualstudiocode
 
-# ignore built html files
-.html
+# ignore built files
+build
