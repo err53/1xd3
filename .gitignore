@@ -103,3 +103,4 @@ $RECYCLE.BIN/
 
 # ignore built files
 public
+*.html
