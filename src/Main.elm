@@ -113,18 +113,23 @@ tabletView model =
             ]
             (E.row [ E.height E.fill ]
                 [ E.column
-                    [ E.width <| E.px (model.width // 5)
+                    [ E.width <| E.px 250
                     , E.height E.fill
                     , Background.color <| E.rgb255 240 240 240
                     , E.padding 10
-                    , Font.size 14
+                    , Font.size 18
+                    , Font.center
                     ]
                     [ E.paragraph
                         [ E.paddingEach { bottom = 20, left = 0, right = 0, top = 0 } ]
                         [ E.text "Drag Me for a ..." ]
                     , E.paragraph [ E.centerX ] [ E.text "Node" ]
                     ]
-                , E.text "World"
+                , E.el
+                    [ E.width <| E.px (model.width - 250) -- this is incredibly janky
+                    , Font.center
+                    ]
+                    (E.text "Insert Graph Here")
                 ]
             )
         ]
@@ -138,7 +143,17 @@ renderNode id node =
 main : Program () Model Msg
 main =
     Browser.document
-        { init = \flags -> ( initialModel, Task.perform (\vp -> WindowResize (round vp.viewport.width) (round vp.viewport.height)) Dom.getViewport )
+        { init =
+            \flags ->
+                ( initialModel
+                , Task.perform
+                    (\vp ->
+                        WindowResize
+                            (round vp.viewport.width)
+                            (round vp.viewport.height)
+                    )
+                    Dom.getViewport
+                )
         , view = view
         , update = update
         , subscriptions =
