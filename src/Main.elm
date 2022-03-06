@@ -132,7 +132,7 @@ tabletView model =
                     ]
                     (E.html
                         (Widget.view model.widgetModel
-                            [ renderNode "test" { coordinates = ( 0.0, 0.0 ), connections = [] }
+                            [ renderNode "testing" { coordinates = ( 0.0, 0.0 ), connections = [] }
                             ]
                         )
                     )
