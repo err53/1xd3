@@ -3,7 +3,7 @@ module Main exposing (..)
 import Browser
 import Browser.Dom as Dom
 import Browser.Events as Browser
-import Dict exposing (..)
+import Dict as Dict
 import Element as E
 import Element.Background as Background
 import Element.Border as Border
@@ -44,7 +44,7 @@ type Msg
 
 
 type alias Graph =
-    Dict String Node
+    Dict.Dict String Node
 
 
 
@@ -53,7 +53,7 @@ type alias Graph =
 
 
 type alias Node =
-    { coordinates : ( Int, Int )
+    { coordinates : ( Float, Float )
     , connections : List String
     }
 
@@ -127,17 +127,31 @@ tabletView model =
                     ]
                 , E.el
                     [ E.width <| E.px (model.width - 250) -- this is incredibly janky
-                    , Font.center
                     ]
-                    (E.text "Insert Graph Here")
+                    (E.html
+                        (Widget.view model.widgetModel
+                            [ renderNode "test" { coordinates = ( 0.0, 0.0 ), connections = [] }
+                            ]
+                        )
+                    )
                 ]
             )
         ]
     }
 
 
-renderNode id node =
-    [ id, node.coordinates ]
+renderNode : String -> Node -> Shape Msg
+renderNode key node =
+    [ oval 100 50
+        |> filled gray
+        |> move ( 0, 4 )
+    , text key
+        |> centered
+        |> size 16
+        |> filled black
+    ]
+        |> group
+        |> move node.coordinates
 
 
 main : Program () Model Msg
