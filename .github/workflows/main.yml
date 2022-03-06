@@ -34,7 +34,7 @@ jobs:
         id: cache-node_modules
         uses: actions/cache@v2
         with:
-          path: example/node_modules
+          path: node_modules
           key: node_modules-${{ hashFiles('package.json', 'package-lock.json') }}
 
       # Re-use ~/.elm between runs until elm.json, elm-tooling.json or
