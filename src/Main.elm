@@ -17,6 +17,8 @@ import GraphicSVG.Widget as Widget
 import Task
 import Time
 
+import Fongf2.DraggableItem
+
 
 type alias Model =
     { time : Float
@@ -130,7 +132,7 @@ tabletView model =
                     ]
                     (E.html
                         (Widget.view model.widgetModel
-                            [ renderNode "test" { coordinates = ( 0.0, 0.0 ), connections = [] }
+                            [ renderNode "testing" { coordinates = ( 0.0, 0.0 ), connections = [] }
                             ]
                         )
                     )
