@@ -7,6 +7,7 @@ import GraphicSVG.EllieApp exposing (..)
 import GraphicSVG.Widget as Widget
 import Task
 import Time
+import Array exposing (..)
 
 
 type alias Model =
@@ -16,7 +17,7 @@ type alias Model =
     , widgetModel : Widget.Model
     , state : State
     , sidebarState : SidebarState
-    , draggableItem : DraggableItem.Model
+    , nodes : Array DraggableItem.Model
     }
 
 
@@ -32,7 +33,7 @@ type SidebarState
 
 type Msg
     = Tick Float GetKeyState
-    | DraggableItemMsg DraggableItem.Msg
+    | DraggableItemMsg Int DraggableItem.Msg
 
 
 type alias Graph =
@@ -54,8 +55,9 @@ initW =
     Widget.init 300 100 "gsvgTop"
 
 
-deeznuts =
-    [ renderNode "test"
+deeznuts : String -> Shape DraggableItem.Msg
+deeznuts txt =
+    [ renderNode txt
         { coordinates = ( 0.0, 0.0 ), connections = [] }
     ]
         |> group
@@ -69,11 +71,9 @@ initialModel =
     , widgetModel = Tuple.first initW
     , state = NotAnimating
     , sidebarState = Edit
-    , draggableItem =
-        DraggableItem.init
-            600
-            1024
-            deeznuts
+    , nodes = Array.fromList
+        [ DraggableItem.init 600 1024 (deeznuts "test")
+        ]
     }
 
 
@@ -83,29 +83,28 @@ update msg model =
         Tick t _ ->
             ( { model | time = t }, Cmd.none )
 
-        DraggableItemMsg draggableItemMsg ->
+        DraggableItemMsg idx draggableItemMsg ->
             ( { model
-                | draggableItem = DraggableItem.update draggableItemMsg model.draggableItem
+                | nodes = Array.set idx 
+                    (DraggableItem.update draggableItemMsg (arrayGet idx model.nodes))
+                    model.nodes
               }
             , Cmd.none
             )
 
 
 myShapes : Model -> List (Shape Msg)
-
-
-
 -- myShapes model =
 --     [ GraphicSVG.map DraggableItemMsg (group <| DraggableItem.myShapes model.draggableItem) ]
-
-
 myShapes model =
+    let
+        nodes =
+            Array.indexedMap
+                ( \idx item -> GraphicSVG.map (DraggableItemMsg idx) (group (DraggableItem.myShapes item)) )
+                model.nodes
+    in
     [ sidebar model
-    , GraphicSVG.map DraggableItemMsg
-        (group <|
-            DraggableItem.myShapes
-                model.draggableItem
-        )
+    , group <| Array.toList nodes
     ]
 
 
@@ -119,14 +118,30 @@ sidebar model =
         |> size 5
         |> filled black
         |> move ( -(192 / 2) + 20, 50 )
+    , [ oval 20 10
+        |> filled lightBlue
+        |> move ( 0, 1 )
     , text "Node"
         |> centered
         |> size 5
         |> filled black
+      ]
+        |> group
         |> move ( -(192 / 2) + 20, 35 )
     ]
         |> group
 
+
+arrayGet : Int -> Array DraggableItem.Model -> DraggableItem.Model
+arrayGet idx arr =
+    let
+        val = Array.get idx arr
+    in
+    case val of
+        Just a ->
+            a
+        Nothing ->
+            DraggableItem.init 600 1024 (deeznuts "error")
 
 view : Model -> Collage Msg
 view model =
@@ -145,6 +160,8 @@ renderNode key node =
     ]
         |> group
         |> move node.coordinates
+
+
 
 
 main : EllieAppWithTick () Model Msg
