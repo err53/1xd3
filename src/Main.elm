@@ -34,6 +34,7 @@ type SidebarState
 type Msg
     = Tick Float GetKeyState
     | DraggableItemMsg Int DraggableItem.Msg
+    | AddNode
 
 
 type alias Graph =
@@ -92,6 +93,13 @@ update msg model =
             , Cmd.none
             )
 
+        AddNode ->
+            ( { model
+            | nodes = Array.push (DraggableItem.init 
+                (toFloat model.width) (toFloat model.height) (deeznuts "A" |> move (0, -50))
+                ) model.nodes
+            }, Cmd.none )
+
 
 myShapes : Model -> List (Shape Msg)
 -- myShapes model =
@@ -128,6 +136,7 @@ sidebar model =
       ]
         |> group
         |> move ( -(192 / 2) + 20, 35 )
+        |> notifyTap AddNode
     ]
         |> group
 
@@ -142,6 +151,7 @@ arrayGet idx arr =
             a
         Nothing ->
             DraggableItem.init 600 1024 (deeznuts "error")
+
 
 view : Model -> Collage Msg
 view model =
@@ -160,8 +170,6 @@ renderNode key node =
     ]
         |> group
         |> move node.coordinates
-
-
 
 
 main : EllieAppWithTick () Model Msg
