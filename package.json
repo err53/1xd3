@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 {
   "name": "1xd3",
   "version": "1.0.0",
@@ -23,32 +22,3 @@
     "elm-live": "^4.0.2"
   }
 }
-=======
-{
-  "name": "1xd3",
-  "version": "1.0.0",
-  "description": "See the current deployment here: https://err53.github.io/1xd3/",
-  "main": "index.js",
-  "scripts": {
-    "start": "elm-live src/Main.elm --open --start-page=dist/index.html -- --output=dist/index.html",
-    "build": "elm make src/Main.elm --optimize --output=dist/index.html",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "postinstall": "elm-tooling install",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/err53/1xd3.git"
-  },
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/err53/1xd3/issues"
-  },
-  "homepage": "https://github.com/err53/1xd3#readme",
-  "devDependencies": {
-    "elm": "^0.19.1-5",
-    "elm-live": "^4.0.2",
-    "elm-tooling": "^1.7.0"
-  }
-}
->>>>>>> 3af479a36355f81d34aa4aad464a7326ef2596e5
