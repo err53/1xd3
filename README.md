@@ -12,3 +12,5 @@ Alternatively, if you want hot-reloading, `npm install` and `npm start`.
 ## Deployment
 
 Run `elm make src/Main.elm --optimize --output=dist/index.html` to build the optimized Elm app.
+
+Alternatively, run `npm run build`.
