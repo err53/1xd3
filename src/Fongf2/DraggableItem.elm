@@ -7,11 +7,12 @@ type alias Coord = (Float, Float)
 
 
 sub : Coord -> Coord -> Coord
-sub (x, y) (u, v) = (x-u, y-v)
+sub (x, y) (u, v) = (x - u, y - v)
 
 
 add : Coord -> Coord -> Coord
-add (x, y) (u, v) = (x+u, y+v)
+add (x, y) (u, v) = (x + u, y + v)
+
 
 type Msg 
   = Tick Float GetKeyState
@@ -22,14 +23,16 @@ type Msg
 type MouseState
   = Waiting
   | Dragging Coord
-  --| StopDragging
   
 
 type alias Model = 
-  { time : Float 
+  { time : Float
+  , width : Float
+  , height : Float
   , mouseState : MouseState
   , coord : Coord
   , shape : Shape Msg
+  , debug : String
   }
   
 
@@ -37,9 +40,8 @@ update : Msg -> Model -> Model
 update msg model = 
   case msg of
     Tick t _ ->
-      { model 
-      | time = t 
-      }
+      { model | time = t }
+      
     NewCoord coord ->
       { model
       | coord = coord
@@ -49,7 +51,14 @@ update msg model =
             Dragging (sub model.coord coord)
           _ ->
             model.mouseState
+    --   , 
+    --   debug = 
+    --     let
+    --         (x, y) = coord
+    --     in
+    --         String.fromFloat x ++ ", " ++ String.fromFloat y
       }
+      
     LetGo ->
       case model.mouseState of
         Dragging delta ->
@@ -61,12 +70,16 @@ update msg model =
           model
     
 
-init : Shape Msg ->  Model
-init shape = 
-  { time = 0 
+-- Pass in the shape that you want to make draggable
+init : Float -> Float -> Shape Msg ->  Model
+init width height shape = 
+  { time = 0
+  , width = width
+  , height = height
   , mouseState = Waiting
   , coord = (0, 0)
   , shape = shape
+  , debug = ""
   }
 
 
@@ -87,12 +100,16 @@ myShapes model =
     visible =
       case model.mouseState of
         Dragging _ -> (0, 0)
-        _ -> (100000000000, 100000000000)
+        _ -> (10000, 10000)
   in
   [ model.shape
     |> move coord
     |> notification
-  , rect 192 128 |> filled white
+  , text model.debug
+    |> filled black
+    |> move (0, 20)
+  , rect model.width model.height 
+    |> filled white
     |> makeTransparent 0
     |> move visible
     -- TODO releasing the mouse while moving does not release the circle
@@ -101,9 +118,19 @@ myShapes model =
     |> notifyLeave LetGo
   ]
   
-
-main = gameApp Tick { model = init (circle 20 |> filled red), view = view, update = update, title = "Game Slot" }
-
-
+  
 view : Model -> Collage Msg
-view model = collage 192 128 (myShapes model)
+view model =
+    collage model.width model.height <|
+        List.concat <|
+            [ myShapes model
+            , [ text model.debug 
+                |> GraphicSVG.size 4 
+                |> alignRight 
+                |> filled black 
+                |> move ( 90, -62 )
+              ]
+            ]
+            
+  
+main = gameApp Tick { model = init 192 128 (circle 20 |> filled red), view = view, update = update, title = "Game Slot" }
