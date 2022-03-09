@@ -1,5 +1,6 @@
 module Main exposing (..)
 
+import Array exposing (..)
 import Dict as Dict
 import Fongf2.DraggableItem as DraggableItem
 import GraphicSVG exposing (..)
@@ -7,7 +8,6 @@ import GraphicSVG.EllieApp exposing (..)
 import GraphicSVG.Widget as Widget
 import Task
 import Time
-import Array exposing (..)
 
 
 type alias Model =
@@ -72,9 +72,10 @@ initialModel =
     , widgetModel = Tuple.first initW
     , state = NotAnimating
     , sidebarState = Edit
-    , nodes = Array.fromList
-        [ DraggableItem.init 600 1024 (deeznuts "test")
-        ]
+    , nodes =
+        Array.fromList
+            [ DraggableItem.init 600 1024 (deeznuts "test")
+            ]
     }
 
 
@@ -86,29 +87,42 @@ update msg model =
 
         DraggableItemMsg idx draggableItemMsg ->
             ( { model
-                | nodes = Array.set idx 
-                    (DraggableItem.update draggableItemMsg (arrayGet idx model.nodes))
-                    model.nodes
+                | nodes =
+                    Array.set idx
+                        (DraggableItem.update draggableItemMsg (arrayGet idx model.nodes))
+                        model.nodes
               }
             , Cmd.none
             )
 
         AddNode ->
             ( { model
-            | nodes = Array.push (DraggableItem.init 
-                (toFloat model.width) (toFloat model.height) (deeznuts "A" |> move (0, -50))
-                ) model.nodes
-            }, Cmd.none )
+                | nodes =
+                    Array.push
+                        (DraggableItem.init
+                            (toFloat model.width)
+                            (toFloat model.height)
+                            (deeznuts "A" |> move ( 0, -50 ))
+                        )
+                        model.nodes
+              }
+            , Cmd.none
+            )
 
 
 myShapes : Model -> List (Shape Msg)
+
+
+
 -- myShapes model =
 --     [ GraphicSVG.map DraggableItemMsg (group <| DraggableItem.myShapes model.draggableItem) ]
+
+
 myShapes model =
     let
         nodes =
             Array.indexedMap
-                ( \idx item -> GraphicSVG.map (DraggableItemMsg idx) (group (DraggableItem.myShapes item)) )
+                (\idx item -> GraphicSVG.map (DraggableItemMsg idx) (group (DraggableItem.myShapes item)))
                 model.nodes
     in
     [ sidebar model
@@ -127,12 +141,12 @@ sidebar model =
         |> filled black
         |> move ( -(192 / 2) + 20, 50 )
     , [ oval 20 10
-        |> filled lightBlue
-        |> move ( 0, 1 )
-    , text "Node"
-        |> centered
-        |> size 5
-        |> filled black
+            |> filled lightBlue
+            |> move ( 0, 1 )
+      , text "Node"
+            |> centered
+            |> size 5
+            |> filled black
       ]
         |> group
         |> move ( -(192 / 2) + 20, 35 )
@@ -144,11 +158,13 @@ sidebar model =
 arrayGet : Int -> Array DraggableItem.Model -> DraggableItem.Model
 arrayGet idx arr =
     let
-        val = Array.get idx arr
+        val =
+            Array.get idx arr
     in
     case val of
         Just a ->
             a
+
         Nothing ->
             DraggableItem.init 600 1024 (deeznuts "error")
 
