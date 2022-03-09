@@ -22,4 +22,3 @@ Alternatively, if you want hot-reloading, `npm install` and `npm start`.
 Run `elm make src/Main.elm --optimize --output=dist/index.html` to build the optimized Elm app.
 
 Alternatively, run `npm run build`.
->>>>>>> parent of b053f3b (Revert "Co-authored-by: himikheal <himikheal@users.noreply.github.com>")
