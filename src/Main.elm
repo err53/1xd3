@@ -2,7 +2,7 @@ module Main exposing (..)
 
 import Array exposing (..)
 import Dict as Dict
-import Fongf2.DraggableItem as DraggableItem
+import Fongf2.Graph
 import GraphicSVG exposing (..)
 import GraphicSVG.EllieApp exposing (..)
 import GraphicSVG.Widget as Widget
@@ -12,12 +12,12 @@ import Time
 
 type alias Model =
     { time : Float
-    , width : Int
-    , height : Int
+    , width : Float
+    , height : Float
     , widgetModel : Widget.Model
     , state : State
     , sidebarState : SidebarState
-    , nodes : Array DraggableItem.Model
+    , graphModel : Fongf2.Graph.Model
     }
 
 
@@ -33,13 +33,7 @@ type SidebarState
 
 type Msg
     = Tick Float GetKeyState
-    | DraggableItemMsg Int DraggableItem.Msg
-    | AddNode
-
-
-type alias Graph =
-    Dict.Dict String Node
-
+    | GraphMsg Fongf2.Graph.Msg
 
 
 -- contains the following info:
@@ -56,14 +50,6 @@ initW =
     Widget.init 300 100 "gsvgTop"
 
 
-deeznuts : String -> Shape DraggableItem.Msg
-deeznuts txt =
-    [ renderNode txt
-        { coordinates = ( 0.0, 0.0 ), connections = [] }
-    ]
-        |> group
-
-
 initialModel : Model
 initialModel =
     { time = 0
@@ -72,10 +58,7 @@ initialModel =
     , widgetModel = Tuple.first initW
     , state = NotAnimating
     , sidebarState = Edit
-    , nodes =
-        Array.fromList
-            [ DraggableItem.init 600 1024 (deeznuts "test")
-            ]
+    , graphModel = Fongf2.Graph.init 600 1024
     }
 
 
@@ -85,30 +68,16 @@ update msg model =
         Tick t _ ->
             ( { model | time = t }, Cmd.none )
 
-        DraggableItemMsg idx draggableItemMsg ->
+        GraphMsg graphMsg ->
+            let
+                (newGraphModel, newGraphMsg) =
+                    Fongf2.Graph.update graphMsg model.graphModel
+            in
             ( { model
-                | nodes =
-                    Array.set idx
-                        (DraggableItem.update draggableItemMsg (arrayGet idx model.nodes))
-                        model.nodes
-              }
-            , Cmd.none
+            | graphModel = newGraphModel
+            } 
+            , Cmd.map GraphMsg newGraphMsg
             )
-
-        AddNode ->
-            ( { model
-                | nodes =
-                    Array.push
-                        (DraggableItem.init
-                            (toFloat model.width)
-                            (toFloat model.height)
-                            (deeznuts "A" |> move ( 0, -50 ))
-                        )
-                        model.nodes
-              }
-            , Cmd.none
-            )
-
 
 myShapes : Model -> List (Shape Msg)
 
@@ -120,16 +89,14 @@ myShapes : Model -> List (Shape Msg)
 
 myShapes model =
     let
-        nodes =
-            Array.indexedMap
-                (\idx item -> GraphicSVG.map (DraggableItemMsg idx) (group (DraggableItem.myShapes item)))
-                model.nodes
+        graph = Fongf2.Graph.myShapes model.graphModel
     in
     [ sidebar model
-    , group <| Array.toList nodes
+    , GraphicSVG.map GraphMsg (group graph) 
     ]
 
 
+sidebar : Model -> Shape Msg
 sidebar model =
     [ rect 40 128
         |> filled gray
@@ -150,42 +117,15 @@ sidebar model =
       ]
         |> group
         |> move ( -(192 / 2) + 20, 35 )
-        |> notifyTap AddNode
+        |> notifyTap (GraphMsg (Fongf2.Graph.AddNode))
     ]
         |> group
 
-
-arrayGet : Int -> Array DraggableItem.Model -> DraggableItem.Model
-arrayGet idx arr =
-    let
-        val =
-            Array.get idx arr
-    in
-    case val of
-        Just a ->
-            a
-
-        Nothing ->
-            DraggableItem.init 600 1024 (deeznuts "error")
 
 
 view : Model -> Collage Msg
 view model =
     collage 192 128 (myShapes model)
-
-
-renderNode : String -> Node -> Shape DraggableItem.Msg
-renderNode key node =
-    [ oval 20 10
-        |> filled gray
-        |> move ( 0, 1 )
-    , text key
-        |> centered
-        |> size 4
-        |> filled black
-    ]
-        |> group
-        |> move node.coordinates
 
 
 main : EllieAppWithTick () Model Msg
