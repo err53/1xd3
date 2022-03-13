@@ -64,12 +64,15 @@ update msg model =
         Tick t _ ->
             ( { model | time = t }, Cmd.none )
 
+        -- Update the node named key
         DraggableItemMsg key draggableItemMsg ->
             ( { model
                 | nodes =
                     Dict.insert key
-                        { val = Fongf2.DraggableItem.update draggableItemMsg 
-                            (dictGet key model.nodes).val
+                        { val =
+                            Fongf2.DraggableItem.update
+                                draggableItemMsg 
+                                (dictGet key model.nodes).val
                         , edges = []
                         }
                         model.nodes
@@ -77,13 +80,15 @@ update msg model =
             , Cmd.none
             )
 
+        -- Add a node to model.nodes
         AddNode key ->
             ( { model
                 | nodes =
                     Dict.insert key
-                        { val = Fongf2.DraggableItem.init
-                            model.width model.height
-                            (renderNode key |> move ( 0, -50 ))
+                        { val =
+                            Fongf2.DraggableItem.init
+                                model.width model.height
+                                (renderNode key |> move ( 0, -50 ))
                         , edges = []
                         }
                         model.nodes
@@ -109,6 +114,8 @@ myShapes : Model -> List (Shape Msg)
 --     [ GraphicSVG.map Fongf2.DraggableItem.sg (group <| DraggableItem.myShapes model.draggableItem) ]
 myShapes model =
     let
+        -- Remap the DraggableItem.Msg to DraggableItemMsg
+        -- and make the ship
         nodes =
             Dict.map
                 (\key node -> 
