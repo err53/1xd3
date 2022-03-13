@@ -126,9 +126,9 @@ renderEdges graph =
                 Just adjNode -> 
                     -- Draws a line from the current
                     -- node to the adj node
-                    (outlined (solid 2) black
+                    outlined (solid 2) black
                         (line node.val.coord adjNode.val.coord)
-                    ) :: adjs
+                    :: adjs
                 Nothing ->
                     adjs
         ) [] node.edges ++ edges
