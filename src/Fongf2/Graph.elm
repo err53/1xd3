@@ -42,16 +42,12 @@ type Msg
 --* Get the node from the graph given a key
 dictGet : String -> Graph -> Node
 dictGet key graph =
-    let
-        val =
-            Dict.get key graph
-    in
-    case val of
+    case Dict.get key graph of
         Just a ->
             a
 
         Nothing ->
-            { val = Fongf2.DraggableItem.init 600 1024
+            { val = Fongf2.DraggableItem.init 600 1024 (0, 0)
                 <| renderNode "error"
             , edges = []
             }
@@ -62,12 +58,7 @@ init width height =
     { time = 0
     , width = width
     , height = height
-    , nodes =
-        Dict.singleton "testing"
-            { val = Fongf2.DraggableItem.init width height 
-                <| renderNode "testing"
-            , edges = []
-            }
+    , nodes = Dict.empty
     , draggedNode = ""
     }
 
@@ -80,14 +71,17 @@ update msg model =
 
         -- Update the node named key
         DraggableItemMsg key draggableItemMsg ->
+            let
+                node = dictGet key model.nodes
+            in
             ( { model
                 | nodes =
                     Dict.insert key
-                        { val =
+                        { node
+                        | val =
                             Fongf2.DraggableItem.update
                                 draggableItemMsg 
-                                (dictGet key model.nodes).val
-                        , edges = []
+                                node.val
                         }
                         model.nodes
                 , draggedNode = key
@@ -103,8 +97,8 @@ update msg model =
                         { val =
                             Fongf2.DraggableItem.init
                                 model.width model.height
-                                (renderNode key |> move ( 0, -50 ))
-                        , edges = []
+                                (0, -50) (renderNode key)
+                        , edges = [ "testing" ]
                         }
                         model.nodes
               }
@@ -121,6 +115,24 @@ renderNode txt =
         |> size 4
         |> filled black
     ]
+        |> group
+        
+
+renderEdges : Graph -> Shape Msg
+renderEdges graph =
+    Dict.foldl (\_ node edges ->
+        List.foldl (\key adjs -> 
+            case Dict.get key graph of
+                Just adjNode -> 
+                    -- Draws a line from the current
+                    -- node to the adj node
+                    (outlined (solid 2) black
+                        (line node.val.coord adjNode.val.coord)
+                    ) :: adjs
+                Nothing ->
+                    adjs
+        ) [] node.edges ++ edges
+    ) [] graph
         |> group
 
 
@@ -145,7 +157,8 @@ myShapes model =
         nodesView =
             Dict.map mapMsg nodes
     in
-    [ group 
+    [ renderEdges model.nodes
+    , group 
         <| Dict.values nodesView 
         ++ 
         -- Make the dragged node the last element of the list
