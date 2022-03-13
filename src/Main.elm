@@ -36,15 +36,6 @@ type Msg
     | GraphMsg Fongf2.Graph.Msg
 
 
--- contains the following info:
--- label, (x, y coords), [connected nodes]
-
-
-type alias Node =
-    { coordinates : ( Float, Float )
-    , connections : List String
-    }
-
 
 initW =
     Widget.init 300 100 "gsvgTop"
@@ -68,6 +59,7 @@ update msg model =
         Tick t _ ->
             ( { model | time = t }, Cmd.none )
 
+        -- Update the graph being displayed
         GraphMsg graphMsg ->
             let
                 (newGraphModel, newGraphMsg) =
@@ -79,14 +71,10 @@ update msg model =
             , Cmd.map GraphMsg newGraphMsg
             )
 
+
 myShapes : Model -> List (Shape Msg)
-
-
-
 -- myShapes model =
 --     [ GraphicSVG.map DraggableItemMsg (group <| DraggableItem.myShapes model.draggableItem) ]
-
-
 myShapes model =
     let
         graph = Fongf2.Graph.myShapes model.graphModel
@@ -98,6 +86,12 @@ myShapes model =
 
 sidebar : Model -> Shape Msg
 sidebar model =
+    let
+        graphMsg =  GraphMsg 
+            <| Fongf2.Graph.AddNode 
+            <| String.fromInt 
+            <| Dict.size model.graphModel.nodes
+    in
     [ rect 40 128
         |> filled gray
         -- TODO: change the background color
@@ -107,6 +101,8 @@ sidebar model =
         |> size 5
         |> filled black
         |> move ( -(192 / 2) + 20, 50 )
+    
+    -- Button to add a node into the graph
     , [ oval 20 10
             |> filled lightBlue
             |> move ( 0, 1 )
@@ -117,7 +113,8 @@ sidebar model =
       ]
         |> group
         |> move ( -(192 / 2) + 20, 35 )
-        |> notifyTap (GraphMsg (Fongf2.Graph.AddNode))
+        -- TODO UPDATE THE NAMING OF THE NODES
+        |> notifyTap graphMsg
     ]
         |> group
 

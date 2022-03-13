@@ -14,11 +14,22 @@ import Time
 -- Nodes and edges of graph
 -- Displays the graph on the screen
 
+
+type alias Node =
+    { val : Fongf2.DraggableItem.Model 
+    , edges : List String
+    }
+
+
+type alias Graph =
+    Dict.Dict String Node
+
+
 type alias Model =
     { time : Float
     , width : Float
     , height : Float
-    , nodes : Array Fongf2.DraggableItem.Model
+    , nodes : Graph
     }
 
 
@@ -29,31 +40,8 @@ type State
 
 type Msg
     = Tick Float GetKeyState
-    | DraggableItemMsg Int Fongf2.DraggableItem.Msg
-    | AddNode
-
-
-type alias Graph =
-    Dict.Dict String Node
-
-
-
--- contains the following info:
--- label, (x, y coords), [connected nodes]
-
-
-type alias Node =
-    { coordinates : ( Float, Float )
-    , connections : List String
-    }
-
-
-deeznuts : String -> Shape Fongf2.DraggableItem.Msg
-deeznuts txt =
-    [ renderNode txt
-        { coordinates = ( 0.0, 0.0 ), connections = [] }
-    ]
-        |> group
+    | DraggableItemMsg String Fongf2.DraggableItem.Msg
+    | AddNode String
 
 
 init : Float -> Float -> Model
@@ -62,9 +50,11 @@ init width height =
     , width = width
     , height = height
     , nodes =
-        Array.fromList
-            [ Fongf2.DraggableItem.init width height (deeznuts "test")
-            ]
+        Dict.singleton "testing"
+            { val = Fongf2.DraggableItem.init width height 
+                <| renderNode "testing"
+            , edges = []
+            }
     }
 
 
@@ -74,28 +64,44 @@ update msg model =
         Tick t _ ->
             ( { model | time = t }, Cmd.none )
 
-        DraggableItemMsg idx draggableItemMsg ->
+        DraggableItemMsg key draggableItemMsg ->
             ( { model
                 | nodes =
-                    Array.set idx
-                        (Fongf2.DraggableItem.update draggableItemMsg (arrayGet idx model.nodes))
+                    Dict.insert key
+                        { val = Fongf2.DraggableItem.update draggableItemMsg 
+                            (dictGet key model.nodes).val
+                        , edges = []
+                        }
                         model.nodes
               }
             , Cmd.none
             )
 
-        AddNode ->
+        AddNode key ->
             ( { model
                 | nodes =
-                    Array.push
-                        (Fongf2.DraggableItem.init
+                    Dict.insert key
+                        { val = Fongf2.DraggableItem.init
                             model.width model.height
-                            (deeznuts "A" |> move ( 0, -50 ))
-                        )
+                            (renderNode key |> move ( 0, -50 ))
+                        , edges = []
+                        }
                         model.nodes
               }
             , Cmd.none
             )
+
+
+renderNode : String -> Shape Fongf2.DraggableItem.Msg
+renderNode txt =
+    [ oval 20 10
+        |> filled gray
+    , text txt
+        |> centered
+        |> size 4
+        |> filled black
+    ]
+        |> group
 
 
 myShapes : Model -> List (Shape Msg)
@@ -104,46 +110,36 @@ myShapes : Model -> List (Shape Msg)
 myShapes model =
     let
         nodes =
-            Array.indexedMap
-                (\idx item -> 
-                    GraphicSVG.map (DraggableItemMsg idx) (group (Fongf2.DraggableItem.myShapes item)))
+            Dict.map
+                (\key node -> 
+                    GraphicSVG.map 
+                        (DraggableItemMsg key) 
+                        (group (Fongf2.DraggableItem.myShapes node.val)))
                 model.nodes
     in
-    [ group <| Array.toList nodes
+    [ group <| Dict.values nodes
     ]
 
 
-arrayGet : Int -> Array Fongf2.DraggableItem.Model -> Fongf2.DraggableItem.Model
-arrayGet idx arr =
+dictGet : String -> Graph -> Node
+dictGet key graph =
     let
         val =
-            Array.get idx arr
+            Dict.get key graph
     in
     case val of
         Just a ->
             a
 
         Nothing ->
-            Fongf2.DraggableItem.init 600 1024 (deeznuts "error")
+            { val = Fongf2.DraggableItem.init 600 1024 (renderNode "error")
+            , edges = []
+            }
 
 
 view : Model -> Collage Msg
 view model =
     collage 192 128 (myShapes model)
-
-
-renderNode : String -> Node -> Shape Fongf2.DraggableItem.Msg
-renderNode key node =
-    [ oval 20 10
-        |> filled gray
-        |> move ( 0, 1 )
-    , text key
-        |> centered
-        |> size 4
-        |> filled black
-    ]
-        |> group
-        |> move node.coordinates
 
 
 main : EllieAppWithTick () Model Msg
