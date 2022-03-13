@@ -3,15 +3,10 @@ module Fongf2.DraggableItem exposing (..)
 import Dict exposing (..)
 import GraphicSVG exposing (..)
 import GraphicSVG.EllieApp exposing (..)
+import Fongf2.Util
+
+
 type alias Coord = (Float, Float)
-
-
-sub : Coord -> Coord -> Coord
-sub (x, y) (u, v) = (x - u, y - v)
-
-
-add : Coord -> Coord -> Coord
-add (x, y) (u, v) = (x + u, y + v)
 
 
 type Msg 
@@ -48,7 +43,7 @@ update msg model =
       , mouseState = 
         case model.mouseState of
           Waiting ->
-            Dragging (sub model.coord coord)
+            Dragging (Fongf2.Util.sub model.coord coord)
           _ ->
             model.mouseState
     --   , 
@@ -63,7 +58,7 @@ update msg model =
       case model.mouseState of
         Dragging delta ->
           { model
-          | coord = add model.coord delta
+          | coord = Fongf2.Util.add model.coord delta
           , mouseState = Waiting
           }
         _ ->
@@ -93,7 +88,7 @@ myShapes model =
           , notifyMouseDownAt NewCoord
           )
         Dragging delta ->
-          ( add model.coord delta
+          ( Fongf2.Util.add model.coord delta
           , identity
           )
           
@@ -117,8 +112,8 @@ myShapes model =
     |> notifyMouseUp LetGo
     |> notifyLeave LetGo
   ]
-  
-  
+
+
 view : Model -> Collage Msg
 view model =
     collage model.width model.height <|
@@ -131,6 +126,6 @@ view model =
                 |> move ( 90, -62 )
               ]
             ]
-            
-  
+
+
 main = gameApp Tick { model = init 192 128 (circle 20 |> filled red), view = view, update = update, title = "Game Slot" }

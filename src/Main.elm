@@ -73,8 +73,6 @@ update msg model =
 
 
 myShapes : Model -> List (Shape Msg)
--- myShapes model =
---     [ GraphicSVG.map DraggableItemMsg (group <| DraggableItem.myShapes model.draggableItem) ]
 myShapes model =
     let
         graph = Fongf2.Graph.myShapes model.graphModel

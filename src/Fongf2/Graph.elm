@@ -1,4 +1,3 @@
-
 module Fongf2.Graph exposing (..)
 
 import Array exposing (..)
@@ -30,18 +29,32 @@ type alias Model =
     , width : Float
     , height : Float
     , nodes : Graph
+    , draggedNode : String
     }
-
-
-type State
-    = Animating -- make up your own states
-    | NotAnimating
 
 
 type Msg
     = Tick Float GetKeyState
     | DraggableItemMsg String Fongf2.DraggableItem.Msg
     | AddNode String
+
+
+--* Get the node from the graph given a key
+dictGet : String -> Graph -> Node
+dictGet key graph =
+    let
+        val =
+            Dict.get key graph
+    in
+    case val of
+        Just a ->
+            a
+
+        Nothing ->
+            { val = Fongf2.DraggableItem.init 600 1024
+                <| renderNode "error"
+            , edges = []
+            }
 
 
 init : Float -> Float -> Model
@@ -55,6 +68,7 @@ init width height =
                 <| renderNode "testing"
             , edges = []
             }
+    , draggedNode = ""
     }
 
 
@@ -76,6 +90,7 @@ update msg model =
                         , edges = []
                         }
                         model.nodes
+                , draggedNode = key
               }
             , Cmd.none
             )
@@ -110,38 +125,37 @@ renderNode txt =
 
 
 myShapes : Model -> List (Shape Msg)
--- myShapes model =
---     [ GraphicSVG.map Fongf2.DraggableItem.sg (group <| DraggableItem.myShapes model.draggableItem) ]
 myShapes model =
     let
+        -- Filter out the dragged item
+        nodes = 
+            Dict.filter 
+                (\key _ -> model.draggedNode/=key)
+                model.nodes
+
+        -- Function to map DraggableItem.Msg to DraggableItemMsg
+        -- in a Shape Msg
+        mapMsg key node =
+            GraphicSVG.map
+                (DraggableItemMsg key)
+                (group (Fongf2.DraggableItem.myShapes node.val))
+
         -- Remap the DraggableItem.Msg to DraggableItemMsg
         -- and make the ship
-        nodes =
-            Dict.map
-                (\key node -> 
-                    GraphicSVG.map 
-                        (DraggableItemMsg key) 
-                        (group (Fongf2.DraggableItem.myShapes node.val)))
-                model.nodes
+        nodesView =
+            Dict.map mapMsg nodes
     in
-    [ group <| Dict.values nodes
+    [ group 
+        <| Dict.values nodesView 
+        ++ 
+        -- Make the dragged node the last element of the list
+        -- so that overlapping nodes don't cancel dragging
+        if model.draggedNode/="" then
+            [ mapMsg model.draggedNode 
+                <| dictGet model.draggedNode model.nodes
+            ]
+        else []
     ]
-
-
-dictGet : String -> Graph -> Node
-dictGet key graph =
-    let
-        val =
-            Dict.get key graph
-    in
-    case val of
-        Just a ->
-            a
-
-        Nothing ->
-            { val = Fongf2.DraggableItem.init 600 1024 (renderNode "error")
-            , edges = []
-            }
 
 
 view : Model -> Collage Msg
