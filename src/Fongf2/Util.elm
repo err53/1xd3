@@ -9,15 +9,19 @@ import Task
 import Time
 
 
-type alias Coord = (Float, Float)
+type alias Coord =
+    ( Float, Float )
 
 
 sub : Coord -> Coord -> Coord
-sub (x, y) (u, v) = (x - u, y - v)
+sub ( x, y ) ( u, v ) =
+    ( x - u, y - v )
 
 
 add : Coord -> Coord -> Coord
-add (x, y) (u, v) = (x + u, y + v)
+add ( x, y ) ( u, v ) =
+    ( x + u, y + v )
+
 
 
 --! Everything below is useless and only needed
