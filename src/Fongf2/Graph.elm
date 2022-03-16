@@ -2,7 +2,7 @@ module Fongf2.Graph exposing (..)
 
 import Array exposing (..)
 import Dict as Dict
-import Fongf2.DraggableItem
+import Fongf2.NodeView
 import GraphicSVG exposing (..)
 import GraphicSVG.EllieApp exposing (..)
 import GraphicSVG.Widget as Widget
@@ -15,7 +15,7 @@ import Time
 
 
 type alias Node =
-    { val : Fongf2.DraggableItem.Model 
+    { val : Fongf2.NodeView.Model 
     , edges : List String
     }
 
@@ -35,8 +35,9 @@ type alias Model =
 
 type Msg
     = Tick Float GetKeyState
-    | DraggableItemMsg String Fongf2.DraggableItem.Msg
+    | NodeViewMsg String Fongf2.NodeView.Msg
     | AddNode String
+    | AddEdge String String
 
 
 --* Get the node from the graph given a key
@@ -47,8 +48,8 @@ dictGet key graph =
             a
 
         Nothing ->
-            { val = Fongf2.DraggableItem.init 600 1024 (0, 0)
-                <| renderNode "error"
+            { val = Fongf2.NodeView.init 600 1024 (0, 0) "error"
+                <| Fongf2.NodeView.renderNode False "error"
             , edges = []
             }
 
@@ -70,18 +71,17 @@ update msg model =
             ( { model | time = t }, Cmd.none )
 
         -- Update the node named key
-        DraggableItemMsg key draggableItemMsg ->
+        NodeViewMsg key nodeViewMsg ->
             let
                 node = dictGet key model.nodes
+                            
             in
             ( { model
                 | nodes =
                     Dict.insert key
-                        { node
-                        | val =
-                            Fongf2.DraggableItem.update
-                                draggableItemMsg 
-                                node.val
+                        { node 
+                        | val = Fongf2.NodeView.update
+                            nodeViewMsg node.val
                         }
                         model.nodes
                 , draggedNode = key
@@ -95,28 +95,22 @@ update msg model =
                 | nodes =
                     Dict.insert key
                         { val =
-                            Fongf2.DraggableItem.init
-                                model.width model.height
-                                (0, -50) (renderNode key)
-                        , edges = [ "testing" ]
+                            Fongf2.NodeView.init
+                                model.width model.height (0, -50) key
+                                (Fongf2.NodeView.renderNode False key)
+                        , edges = []
                         }
                         model.nodes
               }
             , Cmd.none
             )
 
+        AddEdge key1 key2 ->
+            ( model
+            , Cmd.none
+            )
 
-renderNode : String -> Shape Fongf2.DraggableItem.Msg
-renderNode txt =
-    [ oval 20 10
-        |> filled gray
-    , text txt
-        |> centered
-        |> size 4
-        |> filled black
-    ]
-        |> group
-        
+
 
 renderEdges : Graph -> Shape Msg
 renderEdges graph =
@@ -145,14 +139,14 @@ myShapes model =
                 (\key _ -> model.draggedNode/=key)
                 model.nodes
 
-        -- Function to map DraggableItem.Msg to DraggableItemMsg
+        -- Function to map NodeView.Msg to NodeViewMsg
         -- in a Shape Msg
         mapMsg key node =
             GraphicSVG.map
-                (DraggableItemMsg key)
-                (group (Fongf2.DraggableItem.myShapes node.val))
+                (NodeViewMsg key)
+                (group (Fongf2.NodeView.myShapes node.val))
 
-        -- Remap the DraggableItem.Msg to DraggableItemMsg
+        -- Remap the NodeView.Msg to NodeViewMsg
         -- and make the ship
         nodesView =
             Dict.map mapMsg nodes

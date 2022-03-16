@@ -8,6 +8,7 @@ import GraphicSVG.EllieApp exposing (..)
 import GraphicSVG.Widget as Widget
 import Task
 import Time
+import Browser
 
 
 type alias Model =
@@ -115,7 +116,6 @@ sidebar model =
         |> notifyTap graphMsg
     ]
         |> group
-
 
 
 view : Model -> Collage Msg
