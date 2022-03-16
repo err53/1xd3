@@ -1,4 +1,4 @@
-module Fongf2.DraggableItem exposing (..)
+module Fongf2.NodeView exposing (..)
 
 import Dict exposing (..)
 import GraphicSVG exposing (..)
@@ -13,6 +13,8 @@ type Msg
   = Tick Float GetKeyState
   | NewCoord Coord
   | LetGo
+  | Entered
+  | Left
   
 
 type MouseState
@@ -26,7 +28,8 @@ type alias Model =
   , height : Float
   , mouseState : MouseState
   , coord : Coord
-  , shape : Shape Msg
+  , key : String
+  , node : Shape Msg
   , debug : String
   }
   
@@ -63,19 +66,51 @@ update msg model =
           , mouseState = Waiting
         --   , debug = "( " ++ String.fromFloat f ++ ", " ++ String.fromFloat s ++ " )"
           }
+        
         _ ->
-          model
+            model
     
+    Entered ->
+        { model
+        | node = renderNode True model.key
+        }
+
+    Left ->
+        { model
+        | node= renderNode False model.key
+        }
+
+
+renderNode : Bool -> String -> Shape Msg
+renderNode hovering txt =
+    let 
+        highlighting = if hovering then 1 else 0
+    in
+    [ oval 24 14
+        |> filled blue
+        |> makeTransparent highlighting
+        |> notifyEnter Entered
+        |> notifyLeave Left
+    , oval 20 10
+        |> filled gray
+    , text txt
+        |> centered
+        |> GraphicSVG.size 4
+        |> filled black
+    ]
+        |> group
+
 
 -- Pass in the shape that you want to make draggable
-init : Float -> Float -> Coord -> Shape Msg ->  Model
-init width height coord shape = 
+init : Float -> Float -> Coord -> String -> Shape Msg -> Model
+init width height coord key node = 
   { time = 0
   , width = width
   , height = height
   , mouseState = Waiting
   , coord = coord
-  , shape = shape
+  , key = key
+  , node = node
   , debug = ""
   }
 
@@ -85,6 +120,7 @@ myShapes model =
   let
     (coord, notification) =
       case model.mouseState of
+        -- make a new message the first time the node is tapped on
         Waiting ->
           ( model.coord
           , notifyMouseDownAt NewCoord
@@ -99,7 +135,7 @@ myShapes model =
         Dragging _ -> 1
         _ -> 0
   in
-  [ model.shape
+  [ model.node
     |> move coord
     |> notification
   , text model.debug
@@ -131,4 +167,4 @@ view model =
             ]
 
 
-main = gameApp Tick { model = init 192 128 (0, 0) (circle 20 |> filled red), view = view, update = update, title = "Game Slot" }
+main = gameApp Tick { model = init 192 128 (0, 0) "on god" (renderNode False "on god"), view = view, update = update, title = "Game Slot" }
