@@ -1,6 +1,7 @@
 module Main exposing (..)
 
 import Array exposing (..)
+import Browser
 import Dict as Dict
 import Fongf2.Graph
 import GraphicSVG exposing (..)
@@ -8,7 +9,6 @@ import GraphicSVG.EllieApp exposing (..)
 import GraphicSVG.Widget as Widget
 import Task
 import Time
-import Browser
 
 
 type alias Model =
@@ -37,7 +37,6 @@ type Msg
     | GraphMsg Fongf2.Graph.Msg
 
 
-
 initW =
     Widget.init 300 100 "gsvgTop"
 
@@ -63,12 +62,12 @@ update msg model =
         -- Update the graph being displayed
         GraphMsg graphMsg ->
             let
-                (newGraphModel, newGraphMsg) =
+                ( newGraphModel, newGraphMsg ) =
                     Fongf2.Graph.update graphMsg model.graphModel
             in
             ( { model
-            | graphModel = newGraphModel
-            } 
+                | graphModel = newGraphModel
+              }
             , Cmd.map GraphMsg newGraphMsg
             )
 
@@ -76,20 +75,22 @@ update msg model =
 myShapes : Model -> List (Shape Msg)
 myShapes model =
     let
-        graph = Fongf2.Graph.myShapes model.graphModel
+        graph =
+            Fongf2.Graph.myShapes model.graphModel
     in
     [ sidebar model
-    , GraphicSVG.map GraphMsg (group graph) 
+    , GraphicSVG.map GraphMsg (group graph)
     ]
 
 
 sidebar : Model -> Shape Msg
 sidebar model =
     let
-        graphMsg =  GraphMsg 
-            <| Fongf2.Graph.AddNode 
-            <| String.fromInt 
-            <| Dict.size model.graphModel.nodes
+        graphMsg =
+            GraphMsg <|
+                Fongf2.Graph.AddNode <|
+                    String.fromInt <|
+                        Dict.size model.graphModel.nodes
     in
     [ rect 40 128
         |> filled gray
@@ -100,7 +101,7 @@ sidebar model =
         |> size 5
         |> filled black
         |> move ( -(192 / 2) + 20, 50 )
-    
+
     -- Button to add a node into the graph
     , [ oval 20 10
             |> filled lightBlue

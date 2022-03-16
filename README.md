@@ -1,6 +1,7 @@
 # 1XD3 Project
 
 [![CI](https://github.com/err53/1xd3/actions/workflows/main.yml/badge.svg?branch=main)](https://github.com/err53/1xd3/actions/workflows/main.yml)
+[![Netlify Status](https://api.netlify.com/api/v1/badges/c6b2eb0a-7af2-4fd4-bafb-1b65debc670d/deploy-status)](https://app.netlify.com/sites/1xd3-graph-viz/deploys)
 
 [![forthebadge](https://forthebadge.com/images/badges/built-with-resentment.svg)](https://forthebadge.com)
 [![forthebadge](https://forthebadge.com/images/badges/contains-tasty-spaghetti-code.svg)](https://forthebadge.com)
