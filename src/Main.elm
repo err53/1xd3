@@ -141,7 +141,7 @@ downloadButton =
         |> move (0,-4)
     ]
     |> move ( -(192 / 2) + 20, -50 )
-    |> notifyTap (Download "hello")
+    |> notifyTap (Download (Simiones.DownloadTxt.adjacencyList initialModel.graphModel.nodes))
 
 view : Model -> Collage Msg
 view model =
