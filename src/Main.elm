@@ -86,6 +86,7 @@ myShapes model =
     in
     [ sidebar model
     , downloadButton
+        |> notifyTap (Download (Simiones.DownloadTxt.adjacencyList model.graphModel.nodes))
     , GraphicSVG.map GraphMsg (group graph)
     ]
 
@@ -141,7 +142,7 @@ downloadButton =
         |> move (0,-4)
     ]
     |> move ( -(192 / 2) + 20, -50 )
-    |> notifyTap (Download (Simiones.DownloadTxt.adjacencyList initialModel.graphModel.nodes))
+    
 
 view : Model -> Collage Msg
 view model =
