@@ -63,21 +63,22 @@ init : Float -> Float -> Model
 init width height =
     let
         node coord txt =
-            Fongf2.NodeView.init width height coord txt
-            <| Fongf2.NodeView.renderNode False txt
+            Fongf2.NodeView.init width height coord txt <|
+                Fongf2.NodeView.renderNode False txt
     in
     { time = 0
     , width = width
     , height = height
-    , nodes = --Dict.empty
+    , nodes =
+        --Dict.empty
         Dict.fromList
-        [ ("A", { val = node (50, 50) "A" , edges = [ "B", "C" ] })
-        , ("B", { val = node (50, 0) "B" , edges = [ "A" ] })
-        , ("C", { val = node (-25, 0) "C" , edges = [ "D" ] })
-        , ("D", { val = node (-25, -25) "D" , edges = [ "A", "C", "F", "E" ] })
-        , ("E", { val = node (0, 50) "E" , edges = [ "F", "E", "B" ] })
-        , ("F", { val = node (0, -50) "F" , edges = [] })
-        ]
+            [ ( "A", { val = node ( 50, 50 ) "A", edges = [ "B", "C" ] } )
+            , ( "B", { val = node ( 50, 0 ) "B", edges = [ "A" ] } )
+            , ( "C", { val = node ( -25, 0 ) "C", edges = [ "D" ] } )
+            , ( "D", { val = node ( -25, -25 ) "D", edges = [ "A", "C", "F", "E" ] } )
+            , ( "E", { val = node ( 0, 50 ) "E", edges = [ "F", "E", "B" ] } )
+            , ( "F", { val = node ( 0, -50 ) "F", edges = [] } )
+            ]
     , draggedNode = ""
     }
 

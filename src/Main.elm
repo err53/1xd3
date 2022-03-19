@@ -4,17 +4,20 @@ import Array exposing (..)
 import Browser
 import Dict as Dict
 import Fongf2.Graph
-import Simiones.DownloadTxt
 import GraphicSVG exposing (..)
 import GraphicSVG.EllieApp exposing (..)
 import GraphicSVG.Widget as Widget
-import Task
-import Time
 import Html
 import Html.Attributes as HA
+import Simiones.DownloadTxt
+import Task
+import Time
 
-image : Float -> Float -> String-> Shape userMsg
-image w h url = html w h (Html.img [HA.height (floor h), HA.width (floor w), HA.src url] [])
+
+image : Float -> Float -> String -> Shape userMsg
+image w h url =
+    html w h (Html.img [ HA.height (floor h), HA.width (floor w), HA.src url ] [])
+
 
 type alias Model =
     { time : Float
@@ -76,7 +79,10 @@ update msg model =
               }
             , Cmd.map GraphMsg newGraphMsg
             )
-        Download text ->  ( model, Simiones.DownloadTxt.save text )
+
+        Download text ->
+            ( model, Simiones.DownloadTxt.save text )
+
 
 myShapes : Model -> List (Shape Msg)
 myShapes model =
@@ -126,23 +132,24 @@ sidebar model =
     ]
         |> group
 
+
 downloadButton : Shape Msg
-downloadButton = 
+downloadButton =
     group
-    [ roundedRect 36 20 2
-        |> filled lightGray
-    , text "Download as .csv"
-        |> centered
-        |> size 4
-        |> filled black
-        |> move (0,2)
-    , image 20 20 "https://cdn-icons-png.flaticon.com/512/0/532.png"
-        |> move (-20/2,20/2)
-        |> scale 0.4
-        |> move (0,-4)
-    ]
-    |> move ( -(192 / 2) + 20, -50 )
-    
+        [ roundedRect 36 20 2
+            |> filled lightGray
+        , text "Download as .csv"
+            |> centered
+            |> size 4
+            |> filled black
+            |> move ( 0, 2 )
+        , image 20 20 "https://cdn-icons-png.flaticon.com/512/0/532.png"
+            |> move ( -20 / 2, 20 / 2 )
+            |> scale 0.4
+            |> move ( 0, -4 )
+        ]
+        |> move ( -(192 / 2) + 20, -50 )
+
 
 view : Model -> Collage Msg
 view model =
