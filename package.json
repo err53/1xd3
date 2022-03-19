@@ -6,7 +6,9 @@
   "scripts": {
     "start": "elm-live src/Main.elm --open --start-page=dist/index.html -- --output=dist/index.html",
     "build": "elm make src/Main.elm --optimize --output=dist/index.html",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "elm-format": "elm-format src --yes",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepare": "is-ci || husky install"
   },
   "postinstall": "elm-tooling install",
   "repository": {
@@ -22,6 +24,8 @@
   "devDependencies": {
     "elm": "^0.19.1-5",
     "elm-live": "^4.0.2",
-    "elm-tooling": "^1.7.0"
+    "elm-tooling": "^1.7.0",
+    "husky": "^7.0.0",
+    "is-ci": "^3.0.1"
   }
 }
