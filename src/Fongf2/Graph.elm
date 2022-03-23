@@ -30,7 +30,7 @@ type alias Model =
     , width : Float
     , height : Float
     , nodes : Graph
-    , draggedNode : String
+    , selectedNode : String
     }
 
 
@@ -74,7 +74,7 @@ init width height =
         , ("E", { val = node (0, 50) "E" , edges = [ "F", "E", "B" ] })
         , ("F", { val = node (0, -50) "F" , edges = [] })
         ]
-    , draggedNode = ""
+    , selectedNode = ""
     }
 
 
@@ -88,7 +88,7 @@ update msg model =
         NodeViewMsg key nodeViewMsg ->
             let
                 node = dictGet key model.nodes
-                            
+
             in
             ( { model
                 | nodes =
@@ -98,7 +98,7 @@ update msg model =
                             nodeViewMsg node.val
                         }
                         model.nodes
-                , draggedNode = key
+                , selectedNode = key
               }
             , Cmd.none
             )
@@ -164,7 +164,7 @@ myShapes model =
         -- Filter out the dragged item
         nodes = 
             Dict.filter 
-                (\key _ -> model.draggedNode/=key)
+                (\key _ -> model.selectedNode /= key)
                 model.nodes
 
         -- Function to map NodeView.Msg to NodeViewMsg
@@ -185,9 +185,9 @@ myShapes model =
         ++ 
         -- Make the dragged node the last element of the list
         -- so that overlapping nodes don't cancel dragging
-        if model.draggedNode/="" then
-            [ mapMsg model.draggedNode 
-                <| dictGet model.draggedNode model.nodes
+        if model.selectedNode/="" then
+            [ mapMsg model.selectedNode 
+                <| dictGet model.selectedNode model.nodes
             ]
         else []
     ]
