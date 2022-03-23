@@ -91,11 +91,7 @@ renderNode : Bool -> String -> Shape Msg
 renderNode hovering txt =
     let
         highlighting =
-            if hovering then
-                1
-
-            else
-                0
+            if hovering then 1 else 0
     in
     [ oval 24 14
         |> filled blue
@@ -104,6 +100,7 @@ renderNode hovering txt =
         |> notifyLeave Left
     , oval 20 10
         |> filled gray
+        |> notifyMouseDownAt NewCoord
     , text txt
         |> centered
         |> GraphicSVG.size 4
@@ -132,18 +129,14 @@ init width height coord key node =
 myShapes : Model -> List (Shape Msg)
 myShapes model =
     let
-        ( coord, notification ) =
+        coord =
             case model.mouseState of
                 -- make a new message the first time the node is tapped on
                 Waiting ->
-                    ( model.coord
-                    , notifyMouseDownAt NewCoord
-                    )
+                    model.coord
 
                 Dragging delta ->
-                    ( Fongf2.Util.add model.coord delta
-                    , identity
-                    )
+                    Fongf2.Util.add model.coord delta
 
         visible =
             case model.mouseState of
@@ -155,7 +148,6 @@ myShapes model =
     in
     [ model.node
         |> move coord
-        |> notification
     , text model.debug
         |> GraphicSVG.size 4
         |> filled black
