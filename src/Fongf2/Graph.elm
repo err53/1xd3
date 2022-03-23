@@ -3,6 +3,7 @@ module Fongf2.Graph exposing (..)
 import Array exposing (..)
 import Dict as Dict
 import Fongf2.NodeView
+import Fongf2.Util
 import GraphicSVG exposing (..)
 import GraphicSVG.EllieApp exposing (..)
 import GraphicSVG.Widget as Widget
@@ -131,10 +132,24 @@ renderEdges graph =
         List.foldl (\key adjs -> 
             case Dict.get key graph of
                 Just adjNode -> 
+                    let
+                        coord =
+                            case node.val.mouseState of
+                                Fongf2.NodeView.NodeDragging delta ->
+                                    Fongf2.Util.add node.val.coord delta
+                                _ ->
+                                    node.val.coord
+                        adjCoord =
+                            case adjNode.val.mouseState of
+                                Fongf2.NodeView.NodeDragging delta ->
+                                    Fongf2.Util.add adjNode.val.coord delta
+                                _ ->
+                                    adjNode.val.coord
+                    in
                     -- Draws a line from the current
                     -- node to the adj node
                     outlined (solid 2) black
-                        (line node.val.coord adjNode.val.coord)
+                        (line coord adjCoord)
                     :: adjs
                 Nothing ->
                     adjs
