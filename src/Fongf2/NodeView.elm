@@ -45,14 +45,13 @@ update msg model =
 
         NewNodeCoord coord ->
             { model
-                | coord = 
+                | coord =
                     case model.mouseState of
                         EdgeDragging _ ->
                             model.coord
 
                         _ ->
                             coord
-
                 , mouseState =
                     case model.mouseState of
                         Waiting ->
@@ -62,7 +61,7 @@ update msg model =
                             model.mouseState
             }
 
-        -- Change the mouse state to EdgeDragging when 
+        -- Change the mouse state to EdgeDragging when
         -- an edge is added.
         AddEdge coord ->
             { model
@@ -112,7 +111,11 @@ renderNode : Bool -> String -> Shape Msg
 renderNode hovering txt =
     let
         highlighting =
-            if hovering then 1 else 0
+            if hovering then
+                1
+
+            else
+                0
     in
     [ oval 24 14
         |> filled blue
@@ -128,7 +131,7 @@ renderNode hovering txt =
             |> GraphicSVG.size 4
             |> filled black
         ]
-            |> notifyMouseDownAt NewNodeCoord
+        |> notifyMouseDownAt NewNodeCoord
     ]
         |> group
 
@@ -159,7 +162,7 @@ myShapes model =
                 NodeDragging delta ->
                     Fongf2.Util.add model.coord delta
 
-                -- Coordinates shouldn't change when the node isn't being 
+                -- Coordinates shouldn't change when the node isn't being
                 -- dragged
                 _ ->
                     model.coord
