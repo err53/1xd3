@@ -12,7 +12,8 @@ type alias Coord =
 
 type Msg
     = Tick Float GetKeyState
-    | NewCoord Coord
+    | NewNodeCoord Coord
+    | AddEdge Coord
     | LetGo
     | Entered
     | Left
@@ -20,7 +21,8 @@ type Msg
 
 type MouseState
     = Waiting
-    | Dragging Coord
+    | NodeDragging Coord
+    | EdgeDragging Coord
 
 
 type alias Model =
@@ -41,27 +43,40 @@ update msg model =
         Tick t _ ->
             { model | time = t }
 
-        NewCoord coord ->
-            let
-                ( f, s ) =
-                    coord
-            in
+        NewNodeCoord coord ->
             { model
-                | coord = coord
+                | coord =
+                    case model.mouseState of
+                        EdgeDragging _ ->
+                            model.coord
+
+                        _ ->
+                            coord
                 , mouseState =
                     case model.mouseState of
                         Waiting ->
-                            Dragging (Fongf2.Util.sub model.coord coord)
+                            NodeDragging (Fongf2.Util.sub model.coord coord)
 
                         _ ->
                             model.mouseState
+            }
 
-                --   , debug = "( " ++ String.fromFloat f ++ ", " ++ String.fromFloat s ++ " )"
+        -- Change the mouse state to EdgeDragging when
+        -- an edge is added.
+        AddEdge coord ->
+            { model
+                | mouseState =
+                    case model.mouseState of
+                        Waiting ->
+                            EdgeDragging coord
+
+                        _ ->
+                            model.mouseState
             }
 
         LetGo ->
             case model.mouseState of
-                Dragging delta ->
+                NodeDragging delta ->
                     let
                         ( f, s ) =
                             Fongf2.Util.add model.coord delta
@@ -71,6 +86,11 @@ update msg model =
                         , mouseState = Waiting
 
                         --   , debug = "( " ++ String.fromFloat f ++ ", " ++ String.fromFloat s ++ " )"
+                    }
+
+                EdgeDragging delta ->
+                    { model
+                        | mouseState = Waiting
                     }
 
                 _ ->
@@ -102,12 +122,16 @@ renderNode hovering txt =
         |> makeTransparent highlighting
         |> notifyEnter Entered
         |> notifyLeave Left
-    , oval 20 10
-        |> filled gray
-    , text txt
-        |> centered
-        |> GraphicSVG.size 4
-        |> filled black
+        |> notifyMouseDownAt AddEdge
+    , group
+        [ oval 20 10
+            |> filled gray
+        , text txt
+            |> centered
+            |> GraphicSVG.size 4
+            |> filled black
+        ]
+        |> notifyMouseDownAt NewNodeCoord
     ]
         |> group
 
@@ -132,22 +156,25 @@ init width height coord key node =
 myShapes : Model -> List (Shape Msg)
 myShapes model =
     let
-        ( coord, notification ) =
+        coord =
             case model.mouseState of
                 -- make a new message the first time the node is tapped on
-                Waiting ->
-                    ( model.coord
-                    , notifyMouseDownAt NewCoord
-                    )
+                NodeDragging delta ->
+                    Fongf2.Util.add model.coord delta
 
-                Dragging delta ->
-                    ( Fongf2.Util.add model.coord delta
-                    , identity
-                    )
+                -- Coordinates shouldn't change when the node isn't being
+                -- dragged
+                _ ->
+                    model.coord
 
         visible =
             case model.mouseState of
-                Dragging _ ->
+                -- Make the dragging interface visible when mouseState is
+                -- NodeDragging or EdgeDragging
+                NodeDragging _ ->
+                    1
+
+                EdgeDragging _ ->
                     1
 
                 _ ->
@@ -155,7 +182,6 @@ myShapes model =
     in
     [ model.node
         |> move coord
-        |> notification
     , text model.debug
         |> GraphicSVG.size 4
         |> filled black
@@ -165,7 +191,7 @@ myShapes model =
         |> makeTransparent 0
         |> scale visible
         -- TODO releasing the mouse while moving does not release the circle
-        |> notifyMouseMoveAt NewCoord
+        |> notifyMouseMoveAt NewNodeCoord
         |> notifyMouseUp LetGo
         |> notifyLeave LetGo
     ]
