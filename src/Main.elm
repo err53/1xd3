@@ -7,8 +7,16 @@ import Fongf2.Graph
 import GraphicSVG exposing (..)
 import GraphicSVG.EllieApp exposing (..)
 import GraphicSVG.Widget as Widget
+import Html
+import Html.Attributes as HA
+import Simiones.DownloadTxt
 import Task
 import Time
+
+
+image : Float -> Float -> String -> Shape userMsg
+image w h url =
+    html w h (Html.img [ HA.height (floor h), HA.width (floor w), HA.src url ] [])
 
 
 type alias Model =
@@ -35,6 +43,7 @@ type SidebarState
 type Msg
     = Tick Float GetKeyState
     | GraphMsg Fongf2.Graph.Msg
+    | Download String
 
 
 initW =
@@ -71,6 +80,9 @@ update msg model =
             , Cmd.map GraphMsg newGraphMsg
             )
 
+        Download text ->
+            ( model, Simiones.DownloadTxt.save text )
+
 
 myShapes : Model -> List (Shape Msg)
 myShapes model =
@@ -79,6 +91,8 @@ myShapes model =
             Fongf2.Graph.myShapes model.graphModel
     in
     [ sidebar model
+    , downloadButton
+        |> notifyTap (Download (Simiones.DownloadTxt.adjacencyList model.graphModel.nodes))
     , GraphicSVG.map GraphMsg (group graph)
     ]
 
@@ -117,6 +131,24 @@ sidebar model =
         |> notifyTap graphMsg
     ]
         |> group
+
+
+downloadButton : Shape Msg
+downloadButton =
+    group
+        [ roundedRect 36 20 2
+            |> filled lightGray
+        , text "Download as .csv"
+            |> centered
+            |> size 4
+            |> filled black
+            |> move ( 0, 2 )
+        , image 20 20 "https://cdn-icons-png.flaticon.com/512/0/532.png"
+            |> move ( -20 / 2, 20 / 2 )
+            |> scale 0.4
+            |> move ( 0, -4 )
+        ]
+        |> move ( -(192 / 2) + 20, -50 )
 
 
 view : Model -> Collage Msg
