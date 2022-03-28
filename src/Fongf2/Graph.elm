@@ -7,6 +7,7 @@ import Fongf2.Util
 import GraphicSVG exposing (..)
 import GraphicSVG.EllieApp exposing (..)
 import GraphicSVG.Widget as Widget
+import Html exposing (main_)
 import Task
 import Time
 
@@ -32,6 +33,7 @@ type alias Model =
     , height : Float
     , nodes : Graph
     , draggedNode : String
+    , debug : String
     }
 
 
@@ -78,10 +80,15 @@ init width height =
             , ( "C", { val = node ( -25, 0 ) "C", edges = [ "D" ] } )
             , ( "D", { val = node ( -25, -25 ) "D", edges = [ "A", "C", "F", "E" ] } )
             , ( "E", { val = node ( 0, 50 ) "E", edges = [ "F", "E", "B" ] } )
-            , ( "F", { val = node ( 0, -50 ) "F", edges = [] } )
+            , ( "F", { val = node ( 0, -35 ) "F", edges = [] } )
             ]
     , draggedNode = ""
+    , debug = ""
     }
+
+
+mouse =
+    "mouse"
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -95,9 +102,42 @@ update msg model =
             let
                 node =
                     dictGet key model.nodes
-            in
-            ( { model
-                | nodes =
+
+                ( node2, debug ) =
+                    case nodeViewMsg of
+                        -- Add a mouse node that keeps track
+                        -- of the mouse's position
+                        Fongf2.NodeView.AddEdge _ ->
+                            ( { node
+                                | edges = mouse :: node.edges
+                              }
+                            , "added edge"
+                            )
+
+                        -- Remove the edge when the mouse is let go
+                        -- if it's in the EdgeDragging state
+                        Fongf2.NodeView.LetGo ->
+                            ( { node
+                                | edges =
+                                    case node.edges of
+                                        e :: edges2 ->
+                                            case node.val.mouseState of
+                                                Fongf2.NodeView.EdgeDragging _ ->
+                                                    edges2
+
+                                                _ ->
+                                                    e :: edges2
+
+                                        [] ->
+                                            []
+                              }
+                            , "removed edge"
+                            )
+
+                        _ ->
+                            ( node, model.debug )
+
+                nodes =
                     Dict.insert key
                         { node
                             | val =
@@ -106,7 +146,34 @@ update msg model =
                                     node.val
                         }
                         model.nodes
+
+                nodes2 =
+                    case node2.val.mouseState of
+                        -- Add a node that is used to connect the edges
+                        Fongf2.NodeView.EdgeDragging mouseCoord ->
+                            Dict.insert mouse
+                                { node
+                                    | val =
+                                        Fongf2.NodeView.init
+                                            model.width
+                                            model.height
+                                            mouseCoord
+                                            mouse
+                                            (text ""
+                                                |> filled white
+                                                |> makeTransparent 0
+                                            )
+                                    , edges = []
+                                }
+                                nodes
+
+                        _ ->
+                            Dict.remove mouse nodes
+            in
+            ( { model
+                | nodes = nodes2
                 , draggedNode = key
+                , debug = debug
               }
             , Cmd.none
             )
@@ -206,6 +273,11 @@ myShapes model =
                 else
                     []
                )
+    , text model.debug
+        |> alignRight
+        |> size 3
+        |> filled black
+        |> move ( 90, -60 )
     ]
 
 
