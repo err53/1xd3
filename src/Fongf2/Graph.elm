@@ -3,6 +3,7 @@ module Fongf2.Graph exposing (..)
 import Array exposing (..)
 import Dict as Dict
 import Fongf2.NodeView
+import Fongf2.Util
 import GraphicSVG exposing (..)
 import GraphicSVG.EllieApp exposing (..)
 import GraphicSVG.Widget as Widget
@@ -61,10 +62,24 @@ dictGet key graph =
 
 init : Float -> Float -> Model
 init width height =
+    let
+        node coord txt =
+            Fongf2.NodeView.init width height coord txt <|
+                Fongf2.NodeView.renderNode False txt
+    in
     { time = 0
     , width = width
     , height = height
-    , nodes = Dict.empty
+    , nodes =
+        --Dict.empty
+        Dict.fromList
+            [ ( "A", { val = node ( 50, 50 ) "A", edges = [ "B", "C" ] } )
+            , ( "B", { val = node ( 50, 0 ) "B", edges = [ "A" ] } )
+            , ( "C", { val = node ( -25, 0 ) "C", edges = [ "D" ] } )
+            , ( "D", { val = node ( -25, -25 ) "D", edges = [ "A", "C", "F", "E" ] } )
+            , ( "E", { val = node ( 0, 50 ) "E", edges = [ "F", "E", "B" ] } )
+            , ( "F", { val = node ( 0, -50 ) "F", edges = [] } )
+            ]
     , draggedNode = ""
     }
 
@@ -129,11 +144,28 @@ renderEdges graph =
                 (\key adjs ->
                     case Dict.get key graph of
                         Just adjNode ->
+                            let
+                                coord =
+                                    case node.val.mouseState of
+                                        Fongf2.NodeView.NodeDragging delta ->
+                                            Fongf2.Util.add node.val.coord delta
+
+                                        _ ->
+                                            node.val.coord
+
+                                adjCoord =
+                                    case adjNode.val.mouseState of
+                                        Fongf2.NodeView.NodeDragging delta ->
+                                            Fongf2.Util.add adjNode.val.coord delta
+
+                                        _ ->
+                                            adjNode.val.coord
+                            in
                             -- Draws a line from the current
                             -- node to the adj node
                             outlined (solid 2)
                                 black
-                                (line node.val.coord adjNode.val.coord)
+                                (line coord adjCoord)
                                 :: adjs
 
                         Nothing ->
