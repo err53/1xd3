@@ -38,6 +38,7 @@ type alias Model =
     , graph : Graph
     , selectedNode : String
     , mouseCoord : Coord
+    , isDragging : Bool
     , debug : String
     }
 
@@ -46,7 +47,6 @@ type Msg
     = Tick Float GetKeyState
     | NodeViewMsg String Fongf2.NodeView.Msg
     | AddNode String
-    | AddEdge String String
 
 
 
@@ -89,12 +89,9 @@ init width height =
             ]
     , selectedNode = ""
     , mouseCoord = ( 0, 0 )
+    , isDragging = False
     , debug = ""
     }
-
-
-mouse =
-    "mouse"
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -108,36 +105,41 @@ update msg model =
                 node =
                     dictGet key model.graph
 
-                ( mouseCoord, debug ) =
+                ( mouseCoord, isDragging, debug ) =
                     case node.val.mouseState of
                         -- If an edge is added from a node, then
                         -- change the mouse's coordinates
                         Fongf2.NodeView.EdgeDragging _ ->
                             case nodeViewMsg of
                                 Fongf2.NodeView.NewNodeCoord coord ->
-                                    ( coord, "edge dragging" )
+                                    ( coord, True, "edge dragging" )
 
                                 _ ->
-                                    ( node.val.coord, "edge waiting" )
+                                    ( node.val.coord, False, "edge waiting" )
 
                         _ ->
-                            ( node.val.coord, "edge waiting" )
+                            ( node.val.coord, False, "edge waiting 2" )
 
                 ( x, y ) =
                     mouseCoord
             in
             ( { model
                 | graph =
-                    Dict.insert key
-                        { node
-                            | val =
-                                Fongf2.NodeView.update
-                                    nodeViewMsg
-                                    node.val
-                        }
+                    if isDragging then
                         model.graph
+
+                    else
+                        Dict.insert key
+                            { node
+                                | val =
+                                    Fongf2.NodeView.update
+                                        nodeViewMsg
+                                        node.val
+                            }
+                            model.graph
                 , selectedNode = key
                 , mouseCoord = mouseCoord
+                , isDragging = isDragging
                 , debug = debug ++ ", (" ++ String.fromFloat x ++ ", " ++ String.fromFloat y ++ ")"
               }
             , Cmd.none
@@ -162,11 +164,6 @@ update msg model =
             , Cmd.none
             )
 
-        AddEdge key1 key2 ->
-            ( model
-            , Cmd.none
-            )
-
 
 renderEdges : Model -> Shape Msg
 renderEdges model =
@@ -185,9 +182,16 @@ renderEdges model =
                 (line coord1 coord2)
 
         draggedEdge =
-            makeLine
-                (dictGet model.selectedNode model.graph).val.coord
-                model.mouseCoord
+            (if model.isDragging then
+                [ makeLine
+                    (dictGet model.selectedNode model.graph).val.coord
+                    model.mouseCoord
+                ]
+
+             else
+                []
+            )
+                |> group
     in
     Dict.foldl
         (\_ node edges ->
@@ -231,6 +235,33 @@ myShapes model =
         -- and make the ship
         graphView =
             Dict.map mapMsg graph
+
+        dropboxes =
+            List.map
+                (\( key, node ) ->
+                    let
+                        coord =
+                            case node.val.mouseState of
+                                Fongf2.NodeView.NodeDragging delta ->
+                                    Fongf2.Util.add node.val.coord delta
+
+                                _ ->
+                                    node.val.coord
+                    in
+                    oval 20 10
+                        |> filled (rgba 255 0 0 0.5)
+                        |> move coord
+                        |> notifyMouseMoveAt (NodeViewMsg model.selectedNode << Fongf2.NodeView.NewNodeCoord)
+                )
+                (Dict.toList model.graph)
+                |> group
+                |> scale
+                    (if model.isDragging then
+                        1
+
+                     else
+                        0
+                    )
     in
     [ renderEdges model
     , group <|
@@ -245,6 +276,7 @@ myShapes model =
                 else
                     []
                )
+    , dropboxes
     , text model.debug
         |> alignRight
         |> size 3

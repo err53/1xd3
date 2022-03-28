@@ -123,13 +123,6 @@ renderNode hovering txt =
 
             else
                 0
-
-        isForEdgeDragging =
-            if txt == "mouse" then
-                1
-
-            else
-                1
     in
     [ oval 24 14
         |> filled blue
@@ -148,7 +141,6 @@ renderNode hovering txt =
         |> notifyMouseDownAt NewNodeCoord
     ]
         |> group
-        |> makeTransparent isForEdgeDragging
 
 
 
@@ -208,7 +200,8 @@ myShapes model =
         -- TODO releasing the mouse while moving does not release the circle
         |> notifyMouseMoveAt NewNodeCoord
         |> notifyMouseUp LetGo
-        |> notifyLeave LetGo
+
+    -- |> notifyLeave LetGo
     ]
 
 
