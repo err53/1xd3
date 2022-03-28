@@ -9,8 +9,8 @@
 [![forthebadge](https://forthebadge.com/images/badges/60-percent-of-the-time-works-every-time.svg)](https://forthebadge.com)
 [![anand](https://img.shields.io/badge/Approved%20By-Dr.%20Anand-yellow?style=for-the-badge)](https://img.shields.io/badge/Approved%20By-Dr.%20Anand-yellow?style=for-the-badge)
 
-See the current deployment here:
-https://err53.github.io/1xd3/
+See the current stable deployment here:
+https://1xd3-graph-viz.netlify.app/
 
 ## Development
 
