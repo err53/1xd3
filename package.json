@@ -6,7 +6,7 @@
   "scripts": {
     "start": "elm-live src/Main.elm --open --start-page=dist/index.html -- --output=dist/index.html",
     "build": "elm make src/Main.elm --optimize --output=dist/index.html",
-    "elm-format": "elm-format src --yes",
+    "elm-format": "npx elm-format src --yes",
     "test": "echo \"Error: no test specified\" && exit 1",
     "prepare": "is-ci || husky install"
   },
