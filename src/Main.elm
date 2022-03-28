@@ -92,7 +92,7 @@ myShapes model =
     in
     [ sidebar model
     , downloadButton
-        |> notifyTap (Download (Simiones.DownloadTxt.adjacencyList model.graphModel.nodes))
+        |> notifyTap (Download (Simiones.DownloadTxt.adjacencyList model.graphModel.graph))
     , GraphicSVG.map GraphMsg (group graph)
     ]
 
@@ -104,7 +104,7 @@ sidebar model =
             GraphMsg <|
                 Fongf2.Graph.AddNode <|
                     String.fromInt <|
-                        Dict.size model.graphModel.nodes
+                        Dict.size model.graphModel.graph
     in
     [ rect 40 128
         |> filled gray
@@ -127,7 +127,7 @@ sidebar model =
       ]
         |> group
         |> move ( -(192 / 2) + 20, 35 )
-        -- TODO UPDATE THE NAMING OF THE NODES
+        -- TODO UPDATE THE NAMING OF THE graph
         |> notifyTap graphMsg
     ]
         |> group

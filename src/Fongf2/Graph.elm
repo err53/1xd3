@@ -13,8 +13,12 @@ import Time
 
 
 
--- Nodes and edges of graph
+-- graph and edges of graph
 -- Displays the graph on the screen
+
+
+type alias Coord =
+    ( Float, Float )
 
 
 type alias Node =
@@ -31,8 +35,9 @@ type alias Model =
     { time : Float
     , width : Float
     , height : Float
-    , nodes : Graph
-    , draggedNode : String
+    , graph : Graph
+    , selectedNode : String
+    , mouseCoord : Coord
     , debug : String
     }
 
@@ -72,7 +77,7 @@ init width height =
     { time = 0
     , width = width
     , height = height
-    , nodes =
+    , graph =
         --Dict.empty
         Dict.fromList
             [ ( "A", { val = node ( 50, 50 ) "A", edges = [ "B", "C" ] } )
@@ -82,7 +87,8 @@ init width height =
             , ( "E", { val = node ( 0, 50 ) "E", edges = [ "F", "E", "B" ] } )
             , ( "F", { val = node ( 0, -35 ) "F", edges = [] } )
             ]
-    , draggedNode = ""
+    , selectedNode = ""
+    , mouseCoord = ( 0, 0 )
     , debug = ""
     }
 
@@ -97,47 +103,31 @@ update msg model =
         Tick t _ ->
             ( { model | time = t }, Cmd.none )
 
-        --
         NodeViewMsg key nodeViewMsg ->
             let
                 node =
-                    dictGet key model.nodes
+                    dictGet key model.graph
 
-                ( node2, debug ) =
-                    case nodeViewMsg of
-                        -- Add a mouse node that keeps track
-                        -- of the mouse's position
-                        Fongf2.NodeView.AddEdge _ ->
-                            ( { node
-                                | edges = mouse :: node.edges
-                              }
-                            , "added edge"
-                            )
+                ( mouseCoord, debug ) =
+                    case node.val.mouseState of
+                        -- If an edge is added from a node, then
+                        -- change the mouse's coordinates
+                        Fongf2.NodeView.EdgeDragging _ ->
+                            case nodeViewMsg of
+                                Fongf2.NodeView.NewNodeCoord coord ->
+                                    ( coord, "edge dragging" )
 
-                        -- Remove the edge when the mouse is let go
-                        -- if it's in the EdgeDragging state
-                        Fongf2.NodeView.LetGo ->
-                            ( { node
-                                | edges =
-                                    case node.edges of
-                                        e :: edges2 ->
-                                            case node.val.mouseState of
-                                                Fongf2.NodeView.EdgeDragging _ ->
-                                                    edges2
-
-                                                _ ->
-                                                    e :: edges2
-
-                                        [] ->
-                                            []
-                              }
-                            , "removed edge"
-                            )
+                                _ ->
+                                    ( node.val.coord, "edge waiting" )
 
                         _ ->
-                            ( node, model.debug )
+                            ( node.val.coord, "edge waiting" )
 
-                nodes =
+                ( x, y ) =
+                    mouseCoord
+            in
+            ( { model
+                | graph =
                     Dict.insert key
                         { node
                             | val =
@@ -145,43 +135,18 @@ update msg model =
                                     nodeViewMsg
                                     node.val
                         }
-                        model.nodes
-
-                nodes2 =
-                    case node2.val.mouseState of
-                        -- Add a node that is used to connect the edges
-                        Fongf2.NodeView.EdgeDragging mouseCoord ->
-                            Dict.insert mouse
-                                { node
-                                    | val =
-                                        Fongf2.NodeView.init
-                                            model.width
-                                            model.height
-                                            mouseCoord
-                                            mouse
-                                            (text ""
-                                                |> filled white
-                                                |> makeTransparent 0
-                                            )
-                                    , edges = []
-                                }
-                                nodes
-
-                        _ ->
-                            Dict.remove mouse nodes
-            in
-            ( { model
-                | nodes = nodes2
-                , draggedNode = key
-                , debug = debug
+                        model.graph
+                , selectedNode = key
+                , mouseCoord = mouseCoord
+                , debug = debug ++ ", (" ++ String.fromFloat x ++ ", " ++ String.fromFloat y ++ ")"
               }
             , Cmd.none
             )
 
-        -- Add a node to model.nodes
+        -- Add a node to model.graph
         AddNode key ->
             ( { model
-                | nodes =
+                | graph =
                     Dict.insert key
                         { val =
                             Fongf2.NodeView.init
@@ -192,7 +157,7 @@ update msg model =
                                 (Fongf2.NodeView.renderNode False key)
                         , edges = []
                         }
-                        model.nodes
+                        model.graph
               }
             , Cmd.none
             )
@@ -203,8 +168,8 @@ update msg model =
             )
 
 
-renderEdges : Graph -> Shape Msg
-renderEdges graph =
+renderEdges : Model -> Shape Msg
+renderEdges model =
     let
         coord node =
             case node.val.mouseState of
@@ -213,19 +178,26 @@ renderEdges graph =
 
                 _ ->
                     node.val.coord
+
+        makeLine coord1 coord2 =
+            outlined (solid 2)
+                black
+                (line coord1 coord2)
+
+        draggedEdge =
+            makeLine
+                (dictGet model.selectedNode model.graph).val.coord
+                model.mouseCoord
     in
     Dict.foldl
         (\_ node edges ->
             List.foldl
                 (\key adjs ->
-                    case Dict.get key graph of
+                    case Dict.get key model.graph of
                         Just adjNode ->
                             -- Draws a line from the current
                             -- node to the adj node
-                            outlined (solid 2)
-                                black
-                                (line (coord node) (coord adjNode))
-                                :: adjs
+                            makeLine (coord node) (coord adjNode) :: adjs
 
                         Nothing ->
                             adjs
@@ -234,8 +206,8 @@ renderEdges graph =
                 node.edges
                 ++ edges
         )
-        []
-        graph
+        [ draggedEdge ]
+        model.graph
         |> group
 
 
@@ -243,10 +215,10 @@ myShapes : Model -> List (Shape Msg)
 myShapes model =
     let
         -- Filter out the dragged item
-        nodes =
+        graph =
             Dict.filter
-                (\key _ -> model.draggedNode /= key)
-                model.nodes
+                (\key _ -> model.selectedNode /= key)
+                model.graph
 
         -- Function to map NodeView.Msg to NodeViewMsg
         -- in a Shape Msg
@@ -257,17 +229,17 @@ myShapes model =
 
         -- Remap the NodeView.Msg to NodeViewMsg
         -- and make the ship
-        nodesView =
-            Dict.map mapMsg nodes
+        graphView =
+            Dict.map mapMsg graph
     in
-    [ renderEdges model.nodes
+    [ renderEdges model
     , group <|
-        Dict.values nodesView
+        Dict.values graphView
             ++ -- Make the dragged node the last element of the list
-               -- so that overlapping nodes don't cancel dragging
-               (if model.draggedNode /= "" then
-                    [ mapMsg model.draggedNode <|
-                        dictGet model.draggedNode model.nodes
+               -- so that overlapping graph don't cancel dragging
+               (if model.selectedNode /= "" then
+                    [ mapMsg model.selectedNode <|
+                        dictGet model.selectedNode model.graph
                     ]
 
                 else

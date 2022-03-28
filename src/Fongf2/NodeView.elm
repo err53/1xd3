@@ -59,6 +59,13 @@ update msg model =
 
                         _ ->
                             model.mouseState
+
+                -- , debug =
+                --     case model.mouseState of
+                --         EdgeDragging _ ->
+                --             "edge dragging"
+                --         _ ->
+                --             "nothing"
             }
 
         -- Change the mouse state to EdgeDragging when
