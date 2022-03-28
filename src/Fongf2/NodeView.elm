@@ -79,6 +79,7 @@ update msg model =
 
                         _ ->
                             model.mouseState
+                , debug = "added edge"
             }
 
         LetGo ->
@@ -91,6 +92,7 @@ update msg model =
                     { model
                         | coord = Fongf2.Util.add model.coord delta
                         , mouseState = Waiting
+                        , debug = "still dragging"
 
                         --   , debug = "( " ++ String.fromFloat f ++ ", " ++ String.fromFloat s ++ " )"
                     }
@@ -98,10 +100,13 @@ update msg model =
                 EdgeDragging delta ->
                     { model
                         | mouseState = Waiting
+                        , debug = "stopped dragging"
                     }
 
                 _ ->
-                    model
+                    { model
+                        | debug = "still dragging 2"
+                    }
 
         Entered ->
             { model

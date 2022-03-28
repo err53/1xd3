@@ -47,6 +47,7 @@ type Msg
     = Tick Float GetKeyState
     | NodeViewMsg String Fongf2.NodeView.Msg
     | AddNode String
+    | ConnectEdge String
 
 
 
@@ -140,7 +141,7 @@ update msg model =
                 , selectedNode = key
                 , mouseCoord = mouseCoord
                 , isDragging = isDragging
-                , debug = debug ++ ", (" ++ String.fromFloat x ++ ", " ++ String.fromFloat y ++ ")"
+                , debug = model.selectedNode
               }
             , Cmd.none
             )
@@ -164,6 +165,47 @@ update msg model =
             , Cmd.none
             )
 
+        ConnectEdge key ->
+            let
+                node =
+                    dictGet key model.graph
+
+                selectedNode =
+                    dictGet model.selectedNode model.graph
+
+                node2 =
+                    Fongf2.NodeView.update
+                        Fongf2.NodeView.LetGo
+                        node.val
+            in
+            ( { model
+                | graph =
+                    Dict.insert model.selectedNode
+                        { node
+                            | val =
+                                Fongf2.NodeView.update
+                                    Fongf2.NodeView.LetGo
+                                    selectedNode.val
+                        }
+                        model.graph
+                , mouseCoord = selectedNode.val.coord
+                , isDragging = False
+                , debug =
+                    List.foldl
+                        (\( key1, node3 ) edges ->
+                            List.foldl
+                                (\key2 adjs -> key2 ++ " ")
+                                ""
+                                node3.edges
+                                ++ "     "
+                                ++ edges
+                        )
+                        ""
+                        (Dict.toList model.graph)
+              }
+            , Cmd.none
+            )
+
 
 renderEdges : Model -> Shape Msg
 renderEdges model =
@@ -177,9 +219,7 @@ renderEdges model =
                     node.val.coord
 
         makeLine coord1 coord2 =
-            outlined (solid 2)
-                black
-                (line coord1 coord2)
+            outlined (solid 2) black (line coord1 coord2)
 
         draggedEdge =
             (if model.isDragging then
@@ -194,14 +234,29 @@ renderEdges model =
                 |> group
     in
     Dict.foldl
-        (\_ node edges ->
+        (\key1 node edges ->
             List.foldl
                 (\key adjs ->
                     case Dict.get key model.graph of
                         Just adjNode ->
+                            let
+                                ( ( x1, y1 ), ( x2, y2 ) ) =
+                                    ( coord node, coord adjNode )
+
+                                avg a b =
+                                    (a + b) / 2
+                            in
                             -- Draws a line from the current
                             -- node to the adj node
-                            makeLine (coord node) (coord adjNode) :: adjs
+                            ([ makeLine (coord node) (coord adjNode)
+                             , text (key1 ++ key)
+                                |> size 4
+                                |> filled red
+                                |> move ( avg x1 x2, avg y1 y2 )
+                             ]
+                                |> group
+                            )
+                                :: adjs
 
                         Nothing ->
                             adjs
@@ -215,8 +270,8 @@ renderEdges model =
         |> group
 
 
-myShapes : Model -> List (Shape Msg)
-myShapes model =
+renderGraph : Model -> Shape Msg
+renderGraph model =
     let
         -- Filter out the dragged item
         graph =
@@ -251,6 +306,7 @@ myShapes model =
                     oval 20 10
                         |> filled (rgba 255 0 0 0.5)
                         |> move coord
+                        |> notifyMouseUp (ConnectEdge key)
                         |> notifyMouseMoveAt (NodeViewMsg model.selectedNode << Fongf2.NodeView.NewNodeCoord)
                 )
                 (Dict.toList model.graph)
@@ -263,8 +319,7 @@ myShapes model =
                         0
                     )
     in
-    [ renderEdges model
-    , group <|
+    [ group <|
         Dict.values graphView
             ++ -- Make the dragged node the last element of the list
                -- so that overlapping graph don't cancel dragging
@@ -277,6 +332,14 @@ myShapes model =
                     []
                )
     , dropboxes
+    ]
+        |> group
+
+
+myShapes : Model -> List (Shape Msg)
+myShapes model =
+    [ renderEdges model
+    , renderGraph model
     , text model.debug
         |> alignRight
         |> size 3
