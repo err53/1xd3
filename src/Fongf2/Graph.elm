@@ -90,7 +90,7 @@ update msg model =
         Tick t _ ->
             ( { model | time = t }, Cmd.none )
 
-        -- Update the node named key
+        --
         NodeViewMsg key nodeViewMsg ->
             let
                 node =
@@ -138,34 +138,26 @@ update msg model =
 
 renderEdges : Graph -> Shape Msg
 renderEdges graph =
+    let
+        coord node =
+            case node.val.mouseState of
+                Fongf2.NodeView.NodeDragging delta ->
+                    Fongf2.Util.add node.val.coord delta
+
+                _ ->
+                    node.val.coord
+    in
     Dict.foldl
         (\_ node edges ->
             List.foldl
                 (\key adjs ->
                     case Dict.get key graph of
                         Just adjNode ->
-                            let
-                                coord =
-                                    case node.val.mouseState of
-                                        Fongf2.NodeView.NodeDragging delta ->
-                                            Fongf2.Util.add node.val.coord delta
-
-                                        _ ->
-                                            node.val.coord
-
-                                adjCoord =
-                                    case adjNode.val.mouseState of
-                                        Fongf2.NodeView.NodeDragging delta ->
-                                            Fongf2.Util.add adjNode.val.coord delta
-
-                                        _ ->
-                                            adjNode.val.coord
-                            in
                             -- Draws a line from the current
                             -- node to the adj node
                             outlined (solid 2)
                                 black
-                                (line coord adjCoord)
+                                (line (coord node) (coord adjNode))
                                 :: adjs
 
                         Nothing ->
