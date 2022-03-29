@@ -160,11 +160,17 @@ update msg model =
                                 _ ->
                                     model.selectedNode
 
+                        Fongf2.NodeView.Entered ->
+                            key
+
+                        Fongf2.NodeView.Left ->
+                            key
+
                         _ ->
                             model.selectedNode
 
-                ( x, y ) =
-                    mouseCoord
+                selectedNode2 =
+                    dictGet selectedNode model.graph
             in
             ( { model
                 | graph =
@@ -173,11 +179,11 @@ update msg model =
 
                     else
                         Dict.insert selectedNode
-                            { node
+                            { selectedNode2
                                 | val =
                                     Fongf2.NodeView.update
                                         nodeViewMsg
-                                        (dictGet selectedNode model.graph).val
+                                        selectedNode2.val
                             }
                             model.graph
                 , selectedNode = selectedNode
@@ -191,7 +197,6 @@ update msg model =
                             ""
                             (dictGet selectedNode model.graph).edges
                         ++ " ] from NodeViewMsg "
-                        ++ debug
               }
             , Cmd.none
             )
@@ -406,7 +411,8 @@ renderGraph model =
                 else
                     []
                )
-    , dropboxes
+
+    -- , dropboxes
     ]
         |> group
 

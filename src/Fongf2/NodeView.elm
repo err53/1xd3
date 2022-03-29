@@ -59,13 +59,13 @@ update msg model =
 
                         _ ->
                             model.mouseState
+                , debug =
+                    case model.mouseState of
+                        EdgeDragging _ ->
+                            "edge dragging"
 
-                -- , debug =
-                --     case model.mouseState of
-                --         EdgeDragging _ ->
-                --             "edge dragging"
-                --         _ ->
-                --             "nothing"
+                        _ ->
+                            "nothing"
             }
 
         -- Change the mouse state to EdgeDragging when
@@ -111,11 +111,13 @@ update msg model =
         Entered ->
             { model
                 | node = renderNode True model.key
+                , debug = "entered"
             }
 
         Left ->
             { model
                 | node = renderNode False model.key
+                , debug = "left"
             }
 
 
@@ -194,10 +196,11 @@ myShapes model =
     in
     [ model.node
         |> move coord
-    , text model.debug
-        |> GraphicSVG.size 4
-        |> filled black
-        |> move ( 0, -50 )
+
+    -- , text model.debug
+    --     |> GraphicSVG.size 4
+    --     |> filled black
+    --     |> move ( 0, -50 )
     , rect model.width model.height
         |> filled white
         |> makeTransparent 0
