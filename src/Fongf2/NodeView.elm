@@ -197,7 +197,7 @@ myShapes model =
     , text model.debug
         |> GraphicSVG.size 4
         |> filled black
-        |> move ( 0, 20 )
+        |> move ( 0, -50 )
     , rect model.width model.height
         |> filled white
         |> makeTransparent 0

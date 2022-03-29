@@ -65,8 +65,22 @@ initialModel =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        Tick t _ ->
-            ( { model | time = t }, Cmd.none )
+        Tick t keys ->
+            let
+                ( graphModel, graphCmd ) =
+                    Fongf2.Graph.update
+                        (Fongf2.Graph.Tick
+                            t
+                            keys
+                        )
+                        model.graphModel
+            in
+            ( { model
+                | time = t
+                , graphModel = graphModel
+              }
+            , Cmd.none
+            )
 
         -- Update the graph being displayed
         GraphMsg graphMsg ->

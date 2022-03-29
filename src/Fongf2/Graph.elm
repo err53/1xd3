@@ -88,18 +88,41 @@ init width height =
             , ( "E", { val = node ( 0, 50 ) "E", edges = [ "F", "E", "B" ] } )
             , ( "F", { val = node ( 0, -35 ) "F", edges = [] } )
             ]
-    , selectedNode = ""
+    , selectedNode = "C"
     , mouseCoord = ( 0, 0 )
     , isDragging = False
     , debug = ""
     }
 
 
+edgesToString : String -> List String -> String
+edgesToString key edges =
+    key
+        ++ " ["
+        ++ List.foldl
+            (\v acc -> acc ++ " " ++ v)
+            ""
+            edges
+        ++ " ]"
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Tick t _ ->
-            ( { model | time = t }, Cmd.none )
+            ( { model
+                | time = t
+
+                -- , debug =
+                --     model.selectedNode ++ " [" ++
+                --         List.foldl
+                --             (\v acc -> acc ++ " " ++ v)
+                --             ""
+                --             (dictGet model.selectedNode model.graph).edges
+                --     ++ " ] from tick"
+              }
+            , Cmd.none
+            )
 
         NodeViewMsg key nodeViewMsg ->
             let
@@ -107,12 +130,10 @@ update msg model =
                     dictGet key model.graph
 
                 ( mouseCoord, isDragging, debug ) =
-                    case node.val.mouseState of
-                        -- If an edge is added from a node, then
-                        -- change the mouse's coordinates
-                        Fongf2.NodeView.EdgeDragging _ ->
-                            case nodeViewMsg of
-                                Fongf2.NodeView.NewNodeCoord coord ->
+                    case nodeViewMsg of
+                        Fongf2.NodeView.NewNodeCoord coord ->
+                            case node.val.mouseState of
+                                Fongf2.NodeView.EdgeDragging _ ->
                                     ( coord, True, "edge dragging" )
 
                                 _ ->
@@ -120,6 +141,27 @@ update msg model =
 
                         _ ->
                             ( node.val.coord, False, "edge waiting 2" )
+
+                selectedNode =
+                    case nodeViewMsg of
+                        Fongf2.NodeView.NewNodeCoord _ ->
+                            case node.val.mouseState of
+                                Fongf2.NodeView.Waiting ->
+                                    key
+
+                                _ ->
+                                    model.selectedNode
+
+                        Fongf2.NodeView.AddEdge _ ->
+                            case node.val.mouseState of
+                                Fongf2.NodeView.Waiting ->
+                                    key
+
+                                _ ->
+                                    model.selectedNode
+
+                        _ ->
+                            model.selectedNode
 
                 ( x, y ) =
                     mouseCoord
@@ -130,18 +172,26 @@ update msg model =
                         model.graph
 
                     else
-                        Dict.insert key
+                        Dict.insert selectedNode
                             { node
                                 | val =
                                     Fongf2.NodeView.update
                                         nodeViewMsg
-                                        node.val
+                                        (dictGet selectedNode model.graph).val
                             }
                             model.graph
-                , selectedNode = key
+                , selectedNode = selectedNode
                 , mouseCoord = mouseCoord
                 , isDragging = isDragging
-                , debug = model.selectedNode
+                , debug =
+                    selectedNode
+                        ++ " ["
+                        ++ List.foldl
+                            (\v acc -> acc ++ " " ++ v)
+                            ""
+                            (dictGet selectedNode model.graph).edges
+                        ++ " ] from NodeViewMsg "
+                        ++ debug
               }
             , Cmd.none
             )
@@ -161,6 +211,14 @@ update msg model =
                         , edges = []
                         }
                         model.graph
+                , debug =
+                    model.selectedNode
+                        ++ " ["
+                        ++ List.foldl
+                            (\v acc -> acc ++ " " ++ v)
+                            ""
+                            (dictGet model.selectedNode model.graph).edges
+                        ++ " ] from AddNode"
               }
             , Cmd.none
             )
@@ -176,32 +234,35 @@ update msg model =
                 node2 =
                     Fongf2.NodeView.update
                         Fongf2.NodeView.LetGo
-                        node.val
+                        selectedNode.val
+
+                ( x, y ) =
+                    selectedNode.val.coord
+
+                ( x1, y1 ) =
+                    ( String.fromFloat x, String.fromFloat y )
             in
             ( { model
                 | graph =
                     Dict.insert model.selectedNode
                         { node
-                            | val =
-                                Fongf2.NodeView.update
-                                    Fongf2.NodeView.LetGo
-                                    selectedNode.val
+                            | val = node2
                         }
                         model.graph
                 , mouseCoord = selectedNode.val.coord
                 , isDragging = False
                 , debug =
-                    List.foldl
-                        (\( key1, node3 ) edges ->
-                            List.foldl
-                                (\key2 adjs -> key2 ++ " ")
-                                ""
-                                node3.edges
-                                ++ "     "
-                                ++ edges
-                        )
-                        ""
-                        (Dict.toList model.graph)
+                    model.selectedNode
+                        ++ " ["
+                        ++ List.foldl
+                            (\v acc -> acc ++ " " ++ v)
+                            ""
+                            selectedNode.edges
+                        ++ " ], ("
+                        ++ x1
+                        ++ ", "
+                        ++ y1
+                        ++ ")"
               }
             , Cmd.none
             )
@@ -245,11 +306,25 @@ renderEdges model =
 
                                 avg a b =
                                     (a + b) / 2
+
+                                debug =
+                                    case key1 ++ key of
+                                        "CE" ->
+                                            edgesToString key1 node.edges
+
+                                        "CB" ->
+                                            edgesToString key adjNode.edges
+
+                                        "CF" ->
+                                            edgesToString key adjNode.edges
+
+                                        _ ->
+                                            key1 ++ key
                             in
                             -- Draws a line from the current
                             -- node to the adj node
                             ([ makeLine (coord node) (coord adjNode)
-                             , text (key1 ++ key)
+                             , text debug
                                 |> size 4
                                 |> filled red
                                 |> move ( avg x1 x2, avg y1 y2 )
