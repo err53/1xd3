@@ -250,8 +250,9 @@ update msg model =
             ( { model
                 | graph =
                     Dict.insert model.selectedNode
-                        { node
+                        { selectedNode
                             | val = node2
+                            , edges = key :: selectedNode.edges
                         }
                         model.graph
                 , mouseCoord = selectedNode.val.coord
@@ -329,10 +330,11 @@ renderEdges model =
                             -- Draws a line from the current
                             -- node to the adj node
                             ([ makeLine (coord node) (coord adjNode)
-                             , text debug
-                                |> size 4
-                                |> filled red
-                                |> move ( avg x1 x2, avg y1 y2 )
+
+                             --  , text debug
+                             --     |> size 4
+                             --     |> filled red
+                             --     |> move ( avg x1 x2, avg y1 y2 )
                              ]
                                 |> group
                             )
@@ -411,8 +413,7 @@ renderGraph model =
                 else
                     []
                )
-
-    -- , dropboxes
+    , dropboxes
     ]
         |> group
 
