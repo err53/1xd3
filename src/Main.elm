@@ -37,6 +37,7 @@ type State
 
 type SidebarState
     = Edit
+    | Remove
     | Run
 
 
@@ -44,6 +45,7 @@ type Msg
     = Tick Float GetKeyState
     | GraphMsg Fongf2.Graph.Msg
     | Download String
+    | ToggleDeleteMode
 
 
 initW =
@@ -97,6 +99,22 @@ update msg model =
         Download text ->
             ( model, Simiones.DownloadTxt.save text )
 
+        ToggleDeleteMode ->
+            let
+                ( newState, debug ) =
+                    case model.sidebarState of
+                        Remove ->
+                            ( Edit, "edit" )
+
+                        _ ->
+                            ( Remove, "remove" )
+            in
+            ( { model
+                | sidebarState = newState
+              }
+            , Cmd.none
+            )
+
 
 myShapes : Model -> List (Shape Msg)
 myShapes model =
@@ -114,44 +132,64 @@ myShapes model =
 sidebar : Model -> Shape Msg
 sidebar model =
     let
-        graphMsg =
+        addNodeMsg =
             GraphMsg <|
                 Fongf2.Graph.AddNode <|
                     String.fromInt <|
                         Dict.size model.graphModel.graph
     in
     [ rect 40 128
-        |> filled gray
-        -- TODO: change the background color
-        |> move ( -(192 / 2) + 20, 0 )
+        |> filled lightGrey
     , text "Drag me for a..."
         |> centered
-        |> size 5
+        |> size 4
         |> filled black
-        |> move ( -(192 / 2) + 20, 50 )
+        |> move ( 0, 50 )
 
     -- Button to add a node into the graph
     , [ oval 20 10
-            |> filled lightBlue
-            |> move ( 0, 1 )
+            |> filled (rgb 180 244 239)
+            |> move ( 0, 1.5 )
       , text "Node"
             |> centered
-            |> size 5
+            |> size 4
             |> filled black
       ]
         |> group
-        |> move ( -(192 / 2) + 20, 35 )
+        |> move ( 0, 35 )
         -- TODO UPDATE THE NAMING OF THE graph
-        |> notifyTap graphMsg
+        |> notifyMouseDown addNodeMsg
+    , line ( -17, 0 ) ( 17, 0 )
+        |> outlined (solid 0.5) black
+        |> move ( 0, 26 )
+
+    -- Button to go into delete mode
+    , group
+        [ roundedRect 34 20 3
+            |> filled grey
+            |> move ( 0, -3 )
+            |> makeTransparent
+                (if model.sidebarState == Remove then
+                    1
+
+                 else
+                    0
+                )
+        , image 15 15 "svg/eraser-solid.svg"
+            |> move ( -8, 6 )
+        ]
+        |> move ( 0, 17 )
+        |> notifyTap ToggleDeleteMode
     ]
         |> group
+        |> move ( -(192 / 2) + 20, 0 )
 
 
 downloadButton : Shape Msg
 downloadButton =
     group
         [ roundedRect 36 20 2
-            |> filled lightGray
+            |> filled grey
         , text "Download as .csv"
             |> centered
             |> size 4

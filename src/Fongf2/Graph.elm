@@ -79,16 +79,17 @@ init width height =
     , width = width
     , height = height
     , graph =
-        --Dict.empty
-        Dict.fromList
-            [ ( "A", { val = node ( 50, 50 ) "A", edges = [ "B", "C" ] } )
-            , ( "B", { val = node ( 50, 0 ) "B", edges = [ "A" ] } )
-            , ( "C", { val = node ( -25, 0 ) "C", edges = [ "D" ] } )
-            , ( "D", { val = node ( -25, -25 ) "D", edges = [ "A", "C", "F", "E" ] } )
-            , ( "E", { val = node ( 0, 50 ) "E", edges = [ "F", "E", "B" ] } )
-            , ( "F", { val = node ( 0, -35 ) "F", edges = [] } )
-            ]
-    , selectedNode = "C"
+        Dict.empty
+
+    -- Dict.fromList
+    --     [ ( "A", { val = node ( 50, 50 ) "A", edges = [ "B", "C" ] } )
+    --     , ( "B", { val = node ( 50, 0 ) "B", edges = [ "A" ] } )
+    --     , ( "C", { val = node ( -25, 0 ) "C", edges = [ "D" ] } )
+    --     , ( "D", { val = node ( -25, -25 ) "D", edges = [ "A", "C", "F", "E" ] } )
+    --     , ( "E", { val = node ( 0, 50 ) "E", edges = [ "F", "E", "B" ] } )
+    --     , ( "F", { val = node ( 0, -35 ) "F", edges = [] } )
+    --     ]
+    , selectedNode = ""
     , mouseCoord = ( 0, 0 )
     , isDragging = False
     , debug = ""
@@ -203,6 +204,14 @@ update msg model =
 
         -- Add a node to model.graph
         AddNode key ->
+            let
+                dragMeForANodeCoord =
+                    ( -(192 / 2) + 20, 36.5 )
+
+                toDraggingModeCmd =
+                    Task.succeed (NodeViewMsg key (Fongf2.NodeView.NewNodeCoord dragMeForANodeCoord))
+                        |> Task.perform identity
+            in
             ( { model
                 | graph =
                     Dict.insert key
@@ -210,7 +219,7 @@ update msg model =
                             Fongf2.NodeView.init
                                 model.width
                                 model.height
-                                ( 0, -50 )
+                                dragMeForANodeCoord
                                 key
                                 (Fongf2.NodeView.renderNode False key)
                         , edges = []
@@ -225,7 +234,7 @@ update msg model =
                             (dictGet model.selectedNode model.graph).edges
                         ++ " ] from AddNode"
               }
-            , Cmd.none
+            , toDraggingModeCmd
             )
 
         ConnectEdge key ->
