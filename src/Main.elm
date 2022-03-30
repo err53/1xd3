@@ -27,6 +27,7 @@ type alias Model =
     , state : State
     , sidebarState : SidebarState
     , graphModel : Fongf2.Graph.Model
+    , debug : String
     }
 
 
@@ -37,7 +38,7 @@ type State
 
 type SidebarState
     = Edit
-    | Remove
+    | Deleting
     | Run
 
 
@@ -61,6 +62,7 @@ initialModel =
     , state = NotAnimating
     , sidebarState = Edit
     , graphModel = Fongf2.Graph.init 600 1024
+    , debug = ""
     }
 
 
@@ -87,8 +89,29 @@ update msg model =
         -- Update the graph being displayed
         GraphMsg graphMsg ->
             let
+                ( ( graphModel, _ ), debug ) =
+                    case model.sidebarState of
+                        Deleting ->
+                            case graphMsg of
+                                Fongf2.Graph.PressingNode key ->
+                                    ( Fongf2.Graph.update
+                                        (Fongf2.Graph.DeleteNode key)
+                                        model.graphModel
+                                    , "something"
+                                    )
+
+                                -- Fongf2.Graph.PressingEdge key1 key2 ->
+                                --     Fongf2.Graph.update
+                                --         (Fongf2.Graph.DeleteNode key)
+                                --         model.graphModel
+                                _ ->
+                                    ( ( model.graphModel, Cmd.none ), "nothing" )
+
+                        _ ->
+                            ( ( model.graphModel, Cmd.none ), "nothing2" )
+
                 ( newGraphModel, newGraphMsg ) =
-                    Fongf2.Graph.update graphMsg model.graphModel
+                    Fongf2.Graph.update graphMsg graphModel
             in
             ( { model
                 | graphModel = newGraphModel
@@ -103,11 +126,11 @@ update msg model =
             let
                 ( newState, debug ) =
                     case model.sidebarState of
-                        Remove ->
+                        Deleting ->
                             ( Edit, "edit" )
 
                         _ ->
-                            ( Remove, "remove" )
+                            ( Deleting, "remove" )
             in
             ( { model
                 | sidebarState = newState
@@ -133,10 +156,7 @@ sidebar : Model -> Shape Msg
 sidebar model =
     let
         addNodeMsg =
-            GraphMsg <|
-                Fongf2.Graph.AddNode <|
-                    String.fromInt <|
-                        Dict.size model.graphModel.graph
+            GraphMsg Fongf2.Graph.AddNode
     in
     [ rect 40 128
         |> filled lightGrey
@@ -160,7 +180,7 @@ sidebar model =
         -- TODO UPDATE THE NAMING OF THE graph
         |> notifyMouseDown addNodeMsg
     , line ( -17, 0 ) ( 17, 0 )
-        |> outlined (solid 0.5) black
+        |> outlined (solid 0.5) (rgb 207 207 207)
         |> move ( 0, 26 )
 
     -- Button to go into delete mode
@@ -169,7 +189,7 @@ sidebar model =
             |> filled grey
             |> move ( 0, -3 )
             |> makeTransparent
-                (if model.sidebarState == Remove then
+                (if model.sidebarState == Deleting then
                     1
 
                  else

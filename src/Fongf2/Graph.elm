@@ -46,8 +46,11 @@ type alias Model =
 type Msg
     = Tick Float GetKeyState
     | NodeViewMsg String Fongf2.NodeView.Msg
-    | AddNode String
+    | AddNode
     | ConnectEdge String
+    | PressingNode String
+    | PressingEdge String String
+    | DeleteNode String
 
 
 
@@ -61,11 +64,75 @@ dictGet key graph =
             a
 
         Nothing ->
+            let
+                debug =
+                    if Dict.size graph == 0 then
+                        "length 0"
+
+                    else
+                        "error"
+            in
             { val =
-                Fongf2.NodeView.init 600 1024 ( 0, 0 ) "error" <|
-                    Fongf2.NodeView.renderNode False "error"
+                Fongf2.NodeView.init 600 1024 ( 0, 0 ) debug <|
+                    scale 0 <|
+                        Fongf2.NodeView.renderNode False debug
             , edges = []
             }
+
+
+findUnusedKey : Graph -> String
+findUnusedKey graph =
+    let
+        findUnusedKeyUtil possibleKey =
+            let
+                newKey =
+                    String.fromInt <|
+                        Maybe.withDefault 0
+                            (String.toInt possibleKey)
+                            + 1
+            in
+            if Dict.member possibleKey graph then
+                findUnusedKeyUtil newKey
+
+            else
+                possibleKey
+    in
+    findUnusedKeyUtil "0"
+
+
+addNode : Model -> String -> Graph
+addNode model freshKey =
+    let
+        dragMeForANodeCoord =
+            ( -(192 / 2) + 20, 36.5 )
+    in
+    Dict.insert freshKey
+        { val =
+            Fongf2.NodeView.init
+                model.width
+                model.height
+                dragMeForANodeCoord
+                freshKey
+                (Fongf2.NodeView.renderNode False freshKey)
+        , edges = []
+        }
+        model.graph
+
+
+
+-- Remove a node from a graph and the edges
+-- connected to it as well
+
+
+removeNode : Graph -> String -> Graph
+removeNode graph target =
+    Dict.map
+        (\_ node ->
+            { node
+                | edges = List.filter ((/=) target) node.edges
+            }
+        )
+        (Dict.remove target graph)
 
 
 init : Float -> Float -> Model
@@ -190,49 +257,34 @@ update msg model =
                 , selectedNode = selectedNode
                 , mouseCoord = mouseCoord
                 , isDragging = isDragging
-                , debug =
-                    selectedNode
-                        ++ " ["
-                        ++ List.foldl
-                            (\v acc -> acc ++ " " ++ v)
-                            ""
-                            (dictGet selectedNode model.graph).edges
-                        ++ " ] from NodeViewMsg "
+
+                -- , debug =
+                --     selectedNode
+                --         ++ " ["
+                --         ++ List.foldl
+                --             (\v acc -> acc ++ " " ++ v)
+                --             ""
+                --             (dictGet selectedNode model.graph).edges
+                --         ++ " ] from NodeViewMsg "
               }
             , Cmd.none
             )
 
         -- Add a node to model.graph
-        AddNode key ->
+        AddNode ->
             let
                 dragMeForANodeCoord =
                     ( -(192 / 2) + 20, 36.5 )
 
+                freshKey =
+                    findUnusedKey model.graph
+
                 toDraggingModeCmd =
-                    Task.succeed (NodeViewMsg key (Fongf2.NodeView.NewNodeCoord dragMeForANodeCoord))
+                    Task.succeed (NodeViewMsg freshKey (Fongf2.NodeView.NewNodeCoord dragMeForANodeCoord))
                         |> Task.perform identity
             in
             ( { model
-                | graph =
-                    Dict.insert key
-                        { val =
-                            Fongf2.NodeView.init
-                                model.width
-                                model.height
-                                dragMeForANodeCoord
-                                key
-                                (Fongf2.NodeView.renderNode False key)
-                        , edges = []
-                        }
-                        model.graph
-                , debug =
-                    model.selectedNode
-                        ++ " ["
-                        ++ List.foldl
-                            (\v acc -> acc ++ " " ++ v)
-                            ""
-                            (dictGet model.selectedNode model.graph).edges
-                        ++ " ] from AddNode"
+                | graph = addNode model freshKey
               }
             , toDraggingModeCmd
             )
@@ -282,6 +334,32 @@ update msg model =
             , Cmd.none
             )
 
+        DeleteNode key ->
+            let
+                graph =
+                    removeNode model.graph key
+            in
+            ( { model
+                | graph = graph
+
+                -- , debug = "woow"
+              }
+            , Cmd.none
+            )
+
+        PressingNode key ->
+            ( model
+              -- | debug = "hovering node " ++ key }
+            , Cmd.none
+            )
+
+        PressingEdge key1 key2 ->
+            ( { model
+                | debug = "hovering edge " ++ key1 ++ "->" ++ key2
+              }
+            , Cmd.none
+            )
+
 
 renderEdges : Model -> Shape Msg
 renderEdges model =
@@ -312,8 +390,8 @@ renderEdges model =
     Dict.foldl
         (\key1 node edges ->
             List.foldl
-                (\key adjs ->
-                    case Dict.get key model.graph of
+                (\key2 adjs ->
+                    case Dict.get key2 model.graph of
                         Just adjNode ->
                             let
                                 ( ( x1, y1 ), ( x2, y2 ) ) =
@@ -323,18 +401,18 @@ renderEdges model =
                                     (a + b) / 2
 
                                 debug =
-                                    case key1 ++ key of
+                                    case key1 ++ key2 of
                                         "CE" ->
                                             edgesToString key1 node.edges
 
                                         "CB" ->
-                                            edgesToString key adjNode.edges
+                                            edgesToString key2 adjNode.edges
 
                                         "CF" ->
-                                            edgesToString key adjNode.edges
+                                            edgesToString key2 adjNode.edges
 
                                         _ ->
-                                            key1 ++ key
+                                            key1 ++ key2
                             in
                             -- Draws a line from the current
                             -- node to the adj node
@@ -346,6 +424,7 @@ renderEdges model =
                              --     |> move ( avg x1 x2, avg y1 y2 )
                              ]
                                 |> group
+                                |> notifyMouseDown (PressingEdge key1 key2)
                             )
                                 :: adjs
 
@@ -376,6 +455,7 @@ renderGraph model =
             GraphicSVG.map
                 (NodeViewMsg key)
                 (group (Fongf2.NodeView.myShapes node.val))
+                |> notifyMouseDown (PressingNode key)
 
         -- Remap the NodeView.Msg to NodeViewMsg
         -- and make the ship
@@ -415,8 +495,8 @@ renderGraph model =
             ++ -- Make the dragged node the last element of the list
                -- so that overlapping graph don't cancel dragging
                (if model.selectedNode /= "" then
-                    [ mapMsg model.selectedNode <|
-                        dictGet model.selectedNode model.graph
+                    [ dictGet model.selectedNode model.graph
+                        |> mapMsg model.selectedNode
                     ]
 
                 else
