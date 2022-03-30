@@ -51,6 +51,7 @@ type Msg
     | PressingNode String
     | PressingEdge String String
     | DeleteNode String
+    | DeleteEdge String String
 
 
 
@@ -70,7 +71,7 @@ dictGet key graph =
                         "length 0"
 
                     else
-                        "error"
+                        key
             in
             { val =
                 Fongf2.NodeView.init 600 1024 ( 0, 0 ) debug <|
@@ -133,6 +134,19 @@ removeNode graph target =
             }
         )
         (Dict.remove target graph)
+
+
+removeEdge : Graph -> String -> String -> Graph
+removeEdge graph key1 key2 =
+    let
+        node =
+            dictGet key1 graph
+    in
+    Dict.insert key1
+        { node
+            | edges = List.filter ((/=) key2) node.edges
+        }
+        graph
 
 
 init : Float -> Float -> Model
@@ -341,8 +355,16 @@ update msg model =
             in
             ( { model
                 | graph = graph
+                , selectedNode = ""
 
                 -- , debug = "woow"
+              }
+            , Cmd.none
+            )
+
+        DeleteEdge key1 key2 ->
+            ( { model
+                | graph = removeEdge model.graph key1 key2
               }
             , Cmd.none
             )

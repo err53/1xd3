@@ -97,13 +97,16 @@ update msg model =
                                     ( Fongf2.Graph.update
                                         (Fongf2.Graph.DeleteNode key)
                                         model.graphModel
-                                    , "something"
+                                    , "deleted node"
                                     )
 
-                                -- Fongf2.Graph.PressingEdge key1 key2 ->
-                                --     Fongf2.Graph.update
-                                --         (Fongf2.Graph.DeleteNode key)
-                                --         model.graphModel
+                                Fongf2.Graph.PressingEdge key1 key2 ->
+                                    ( Fongf2.Graph.update
+                                        (Fongf2.Graph.DeleteEdge key1 key2)
+                                        model.graphModel
+                                    , "Deleted edge"
+                                    )
+
                                 _ ->
                                     ( ( model.graphModel, Cmd.none ), "nothing" )
 
