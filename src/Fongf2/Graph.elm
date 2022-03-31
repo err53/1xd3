@@ -395,13 +395,52 @@ renderEdges model =
                     node.val.coord
 
         makeLine coord1 coord2 =
-            outlined (solid 2) black (line coord1 coord2)
+            line coord1 coord2
+                |> outlined (solid 1.5) black
+
+        arrowHead (( x1, y1 ) as coord1) (( x2, y2 ) as coord2) disFromCoord2 =
+            let
+                ( dx, dy ) =
+                    Fongf2.Util.sub coord2 coord1
+
+                alpha =
+                    atan <| abs <| dy / dx
+
+                angle =
+                    if dx > 0 && dy >= 0 then
+                        alpha
+
+                    else if dx < 0 && dy >= 0 then
+                        pi - alpha
+
+                    else if dx < 0 && dy <= 0 then
+                        pi + alpha
+
+                    else if dx > 0 && dy <= 0 then
+                        2 * pi - alpha
+
+                    else if dx == 0 && dy >= 0 then
+                        pi / 2
+
+                    else if dx == 0 && dy <= 0 then
+                        3 * pi / 2
+
+                    else
+                        0
+            in
+            triangle 3
+                |> filled black
+                |> rotate angle
+                |> move coord2
 
         draggedEdge =
             (if model.isDragging then
-                [ makeLine
-                    (dictGet model.selectedNode model.graph).val.coord
-                    model.mouseCoord
+                let
+                    nodeCoord =
+                        (dictGet model.selectedNode model.graph).val.coord
+                in
+                [ makeLine nodeCoord model.mouseCoord
+                , arrowHead nodeCoord model.mouseCoord 0
                 ]
 
              else
@@ -416,34 +455,72 @@ renderEdges model =
                     case Dict.get key2 model.graph of
                         Just adjNode ->
                             let
-                                ( ( x1, y1 ), ( x2, y2 ) ) =
-                                    ( coord node, coord adjNode )
+                                (( nodeX, nodeY ) as nodeCoord) =
+                                    coord node
 
-                                avg a b =
-                                    (a + b) / 2
+                                (( adjX, adjY ) as adjCoord) =
+                                    coord adjNode
 
-                                debug =
-                                    case key1 ++ key2 of
-                                        "CE" ->
-                                            edgesToString key1 node.edges
+                                -- Find the intersection between the
+                                -- edge and node, with equation
+                                -- x^2 + (2y)^2 = 10^2.
+                                -- So, find an equation for the edge line y
+                                m =
+                                    (nodeY - adjY) / (nodeX - adjX)
 
-                                        "CB" ->
-                                            edgesToString key2 adjNode.edges
+                                -- x^2 + (2y)^2 = 10^2
+                                -- x^2 + (2mx)^2 = 10^2
+                                -- x^2(1 + 4m^2) = 10^2
+                                -- x^2 = 10^2 / (1 + 4m^2)
+                                dir =
+                                    if adjX < nodeX then
+                                        1
 
-                                        "CF" ->
-                                            edgesToString key2 adjNode.edges
+                                    else
+                                        -1
 
-                                        _ ->
-                                            key1 ++ key2
+                                ix =
+                                    dir * sqrt (10 ^ 2 / (1 + 4 * m ^ 2))
+
+                                iy =
+                                    m * ix
+
+                                -- Place the arrowhead l units away
+                                -- from the intercept
+                                l =
+                                    3
+
+                                -- Which is the intersection of
+                                -- The circle with length l
+                                -- (x - a)^2 + (y - b)^2 = l^2
+                                -- (x - a)^2 + (mx - b)^2 = l^2
+                                -- x^2 - 2ax + a^2 + m^2x^2 - 2bmx + b^2 = l^2
+                                -- (1+m^2)x^2 - 2(a+bm)x + a^2 + b^2 - l^2 = 0
+                                arrowHeadX =
+                                    (2
+                                        * (ix + iy * m)
+                                        + dir
+                                        * sqrt
+                                            ((2 * (ix + iy * m))
+                                                ^ 2
+                                                - 4
+                                                * (1 + m ^ 2)
+                                                * (ix ^ 2 + iy ^ 2 - l ^ 2)
+                                            )
+                                    )
+                                        / (2 * (1 + m ^ 2))
+
+                                arrowHeadY =
+                                    arrowHeadX * m
+
+                                arrowHeadCoord =
+                                    ( arrowHeadX, arrowHeadY )
                             in
                             -- Draws a line from the current
                             -- node to the adj node
-                            ([ makeLine (coord node) (coord adjNode)
-
-                             --  , text debug
-                             --     |> size 4
-                             --     |> filled red
-                             --     |> move ( avg x1 x2, avg y1 y2 )
+                            ([ makeLine nodeCoord (Fongf2.Util.add adjCoord arrowHeadCoord)
+                             , arrowHead nodeCoord adjCoord 3
+                                |> move arrowHeadCoord
                              ]
                                 |> group
                                 |> notifyMouseDown (PressingEdge key1 key2)
