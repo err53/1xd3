@@ -158,6 +158,14 @@ sidebar model =
     let
         addNodeMsg =
             GraphMsg Fongf2.Graph.AddNode
+
+        eraserButtonColour =
+            case model.sidebarState of
+                Deleting ->
+                    pink
+
+                _ ->
+                    darkGrey
     in
     [ rect 40 128
         |> filled lightGrey
@@ -187,15 +195,8 @@ sidebar model =
     -- Button to go into delete mode
     , group
         [ roundedRect 34 20 3
-            |> filled grey
+            |> filled eraserButtonColour
             |> move ( 0, -3 )
-            |> makeTransparent
-                (if model.sidebarState == Deleting then
-                    1
-
-                 else
-                    0
-                )
         , image 15 15 "svg/eraser-solid.svg"
             |> move ( -8, 6 )
         ]
