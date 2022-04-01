@@ -149,8 +149,6 @@ myShapes model =
             Fongf2.Graph.myShapes model.graphModel
     in
     [ sidebar model
-    , downloadButton
-        |> notifyTap (Download (Simiones.DownloadTxt.adjacencyList model.graphModel.graph))
     , GraphicSVG.map GraphMsg (group graph)
     ]
 
@@ -203,6 +201,11 @@ sidebar model =
         ]
         |> move ( 0, 17 )
         |> notifyTap ToggleDeleteMode
+    , parseAdjacencyList model.graphModel.graph
+        |> move ( -17, 0 )
+    , downloadButton
+        |> notifyTap (Download (Simiones.DownloadTxt.adjacencyList model.graphModel.graph))
+        |> move ( 0, -48 )
     ]
         |> group
         |> move ( -(192 / 2) + 20, 0 )
@@ -211,19 +214,32 @@ sidebar model =
 downloadButton : Shape Msg
 downloadButton =
     group
-        [ roundedRect 36 20 2
+        [ roundedRect 36 26 2
             |> filled grey
-        , text "Download as .csv"
+        , text "Export/Import"
             |> centered
             |> size 4
             |> filled black
-            |> move ( 0, 2 )
+            |> move ( 0, 5 )
         , image 20 20 "https://cdn-icons-png.flaticon.com/512/0/532.png"
-            |> move ( -20 / 2, 20 / 2 )
-            |> scale 0.4
-            |> move ( 0, -4 )
+            |> scale 0.6
+            -- , image 12 16 "svg/file-import-solid.svg"
+            |> move ( -6, 2 )
         ]
-        |> move ( -(192 / 2) + 20, -50 )
+
+
+parseAdjacencyList : Fongf2.Graph.Graph -> Shape Msg
+parseAdjacencyList graph =
+    List.indexedMap
+        (\idx ( key, node ) ->
+            text (key ++ ": " ++ Simiones.DownloadTxt.edgeListToString node.edges)
+                |> selectable
+                |> size 4
+                |> filled black
+                |> move ( 0, -5 * toFloat idx )
+        )
+        (Dict.toList graph)
+        |> group
 
 
 view : Model -> Collage Msg

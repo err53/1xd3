@@ -332,18 +332,19 @@ update msg model =
                         model.graph
                 , mouseCoord = selectedNode.val.coord
                 , isDragging = False
-                , debug =
-                    model.selectedNode
-                        ++ " ["
-                        ++ List.foldl
-                            (\v acc -> acc ++ " " ++ v)
-                            ""
-                            selectedNode.edges
-                        ++ " ], ("
-                        ++ x1
-                        ++ ", "
-                        ++ y1
-                        ++ ")"
+
+                -- , debug =
+                --     model.selectedNode
+                --         ++ " ["
+                --         ++ List.foldl
+                --             (\v acc -> acc ++ " " ++ v)
+                --             ""
+                --             selectedNode.edges
+                --         ++ " ], ("
+                --         ++ x1
+                --         ++ ", "
+                --         ++ y1
+                --         ++ ")"
               }
             , Cmd.none
             )
@@ -376,9 +377,10 @@ update msg model =
             )
 
         PressingEdge key1 key2 ->
-            ( { model
-                | debug = "hovering edge " ++ key1 ++ "->" ++ key2
-              }
+            -- ( { model
+            --     | debug = "hovering edge " ++ key1 ++ "->" ++ key2
+            --   }
+            ( model
             , Cmd.none
             )
 
@@ -529,8 +531,6 @@ renderEdges model =
                             ([ makeLine begin (Fongf2.Util.add adjCoord (arrowHeadCoord dir))
                              , arrowHead nodeCoord adjCoord 3
                                 |> move (arrowHeadCoord dir)
-                             , text debug
-                                |> filled black
                              ]
                                 |> group
                                 |> notifyMouseDown (PressingEdge key1 key2)
