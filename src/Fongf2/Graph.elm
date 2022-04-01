@@ -479,11 +479,11 @@ renderEdges model =
                                     else
                                         -1
 
-                                ix =
-                                    dir * sqrt (10 ^ 2 / (1 + 4 * m ^ 2))
+                                ix dir2 =
+                                    dir2 * sqrt (10 ^ 2 / (1 + 4 * m ^ 2))
 
-                                iy =
-                                    m * ix
+                                iy dir2 =
+                                    m * ix dir2
 
                                 -- Place the arrowhead l units away
                                 -- from the intercept
@@ -496,31 +496,41 @@ renderEdges model =
                                 -- (x - a)^2 + (mx - b)^2 = l^2
                                 -- x^2 - 2ax + a^2 + m^2x^2 - 2bmx + b^2 = l^2
                                 -- (1+m^2)x^2 - 2(a+bm)x + a^2 + b^2 - l^2 = 0
-                                arrowHeadX =
+                                arrowHeadX dir2 =
                                     (2
-                                        * (ix + iy * m)
-                                        + dir
+                                        * (ix dir2 + iy dir2 * m)
+                                        + dir2
+                                        -- TODO
                                         * sqrt
-                                            ((2 * (ix + iy * m))
+                                            ((2 * (ix dir2 + iy dir2 * m))
                                                 ^ 2
                                                 - 4
                                                 * (1 + m ^ 2)
-                                                * (ix ^ 2 + iy ^ 2 - l ^ 2)
+                                                * (ix dir2 ^ 2 + iy dir2 ^ 2 - l ^ 2)
                                             )
                                     )
                                         / (2 * (1 + m ^ 2))
 
-                                arrowHeadY =
-                                    arrowHeadX * m
+                                arrowHeadY dir2 =
+                                    arrowHeadX dir2 * m
 
-                                arrowHeadCoord =
-                                    ( arrowHeadX, arrowHeadY )
+                                arrowHeadCoord dir2 =
+                                    ( arrowHeadX dir2, arrowHeadY dir2 )
+
+                                begin =
+                                    if List.member key1 adjNode.edges then
+                                        Fongf2.Util.add nodeCoord (arrowHeadCoord -dir)
+
+                                    else
+                                        nodeCoord
                             in
                             -- Draws a line from the current
                             -- node to the adj node
-                            ([ makeLine nodeCoord (Fongf2.Util.add adjCoord arrowHeadCoord)
+                            ([ makeLine begin (Fongf2.Util.add adjCoord (arrowHeadCoord dir))
                              , arrowHead nodeCoord adjCoord 3
-                                |> move arrowHeadCoord
+                                |> move (arrowHeadCoord dir)
+                             , text debug
+                                |> filled black
                              ]
                                 |> group
                                 |> notifyMouseDown (PressingEdge key1 key2)
