@@ -27,6 +27,7 @@ type alias Model =
     , state : State
     , sidebarState : SidebarState
     , graphModel : Fongf2.Graph.Model
+    , debug : String
     }
 
 
@@ -37,6 +38,7 @@ type State
 
 type SidebarState
     = Edit
+    | Deleting
     | Run
 
 
@@ -44,6 +46,7 @@ type Msg
     = Tick Float GetKeyState
     | GraphMsg Fongf2.Graph.Msg
     | Download String
+    | ToggleDeleteMode
 
 
 initW =
@@ -59,20 +62,59 @@ initialModel =
     , state = NotAnimating
     , sidebarState = Edit
     , graphModel = Fongf2.Graph.init 600 1024
+    , debug = ""
     }
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        Tick t _ ->
-            ( { model | time = t }, Cmd.none )
+        Tick t keys ->
+            let
+                ( graphModel, graphCmd ) =
+                    Fongf2.Graph.update
+                        (Fongf2.Graph.Tick
+                            t
+                            keys
+                        )
+                        model.graphModel
+            in
+            ( { model
+                | time = t
+                , graphModel = graphModel
+              }
+            , Cmd.none
+            )
 
         -- Update the graph being displayed
         GraphMsg graphMsg ->
             let
+                ( ( graphModel, _ ), debug ) =
+                    case model.sidebarState of
+                        Deleting ->
+                            case graphMsg of
+                                Fongf2.Graph.PressingNode key ->
+                                    ( Fongf2.Graph.update
+                                        (Fongf2.Graph.DeleteNode key)
+                                        model.graphModel
+                                    , "deleted node"
+                                    )
+
+                                Fongf2.Graph.PressingEdge key1 key2 ->
+                                    ( Fongf2.Graph.update
+                                        (Fongf2.Graph.DeleteEdge key1 key2)
+                                        model.graphModel
+                                    , "Deleted edge"
+                                    )
+
+                                _ ->
+                                    ( ( model.graphModel, Cmd.none ), "nothing" )
+
+                        _ ->
+                            ( ( model.graphModel, Cmd.none ), "nothing2" )
+
                 ( newGraphModel, newGraphMsg ) =
-                    Fongf2.Graph.update graphMsg model.graphModel
+                    Fongf2.Graph.update graphMsg graphModel
             in
             ( { model
                 | graphModel = newGraphModel
@@ -83,6 +125,22 @@ update msg model =
         Download text ->
             ( model, Simiones.DownloadTxt.save text )
 
+        ToggleDeleteMode ->
+            let
+                ( newState, debug ) =
+                    case model.sidebarState of
+                        Deleting ->
+                            ( Edit, "edit" )
+
+                        _ ->
+                            ( Deleting, "remove" )
+            in
+            ( { model
+                | sidebarState = newState
+              }
+            , Cmd.none
+            )
+
 
 myShapes : Model -> List (Shape Msg)
 myShapes model =
@@ -91,8 +149,6 @@ myShapes model =
             Fongf2.Graph.myShapes model.graphModel
     in
     [ sidebar model
-    , downloadButton
-        |> notifyTap (Download (Simiones.DownloadTxt.adjacencyList model.graphModel.nodes))
     , GraphicSVG.map GraphMsg (group graph)
     ]
 
@@ -100,55 +156,91 @@ myShapes model =
 sidebar : Model -> Shape Msg
 sidebar model =
     let
-        graphMsg =
-            GraphMsg <|
-                Fongf2.Graph.AddNode <|
-                    String.fromInt <|
-                        Dict.size model.graphModel.nodes
+        addNodeMsg =
+            GraphMsg Fongf2.Graph.AddNode
+
+        eraserButtonColour =
+            case model.sidebarState of
+                Deleting ->
+                    pink
+
+                _ ->
+                    darkGrey
     in
     [ rect 40 128
-        |> filled gray
-        -- TODO: change the background color
-        |> move ( -(192 / 2) + 20, 0 )
+        |> filled lightGrey
     , text "Drag me for a..."
         |> centered
-        |> size 5
+        |> size 4
         |> filled black
-        |> move ( -(192 / 2) + 20, 50 )
+        |> move ( 0, 50 )
 
     -- Button to add a node into the graph
     , [ oval 20 10
-            |> filled lightBlue
-            |> move ( 0, 1 )
+            |> filled (rgb 180 244 239)
+            |> move ( 0, 1.5 )
       , text "Node"
             |> centered
-            |> size 5
+            |> size 4
             |> filled black
       ]
         |> group
-        |> move ( -(192 / 2) + 20, 35 )
-        -- TODO UPDATE THE NAMING OF THE NODES
-        |> notifyTap graphMsg
+        |> move ( 0, 35 )
+        -- TODO UPDATE THE NAMING OF THE graph
+        |> notifyMouseDown addNodeMsg
+    , line ( -17, 0 ) ( 17, 0 )
+        |> outlined (solid 0.5) (rgb 207 207 207)
+        |> move ( 0, 26 )
+
+    -- Button to go into delete mode
+    , group
+        [ roundedRect 34 20 3
+            |> filled eraserButtonColour
+            |> move ( 0, -3 )
+        , image 15 15 "svg/eraser-solid.svg"
+            |> move ( -8, 6 )
+        ]
+        |> move ( 0, 17 )
+        |> notifyTap ToggleDeleteMode
+    , parseAdjacencyList model.graphModel.graph
+        |> move ( -17, 0 )
+    , downloadButton
+        |> notifyTap (Download (Simiones.DownloadTxt.adjacencyList model.graphModel.graph))
+        |> move ( 0, -48 )
     ]
         |> group
+        |> move ( -(192 / 2) + 20, 0 )
 
 
 downloadButton : Shape Msg
 downloadButton =
     group
-        [ roundedRect 36 20 2
-            |> filled lightGray
+        [ roundedRect 36 26 2
+            |> filled grey
         , text "Download as .csv"
             |> centered
             |> size 4
             |> filled black
-            |> move ( 0, 2 )
+            |> move ( 0, 5 )
         , image 20 20 "https://cdn-icons-png.flaticon.com/512/0/532.png"
-            |> move ( -20 / 2, 20 / 2 )
-            |> scale 0.4
-            |> move ( 0, -4 )
+            |> scale 0.6
+            -- , image 12 16 "svg/file-import-solid.svg"
+            |> move ( -6, 2 )
         ]
-        |> move ( -(192 / 2) + 20, -50 )
+
+
+parseAdjacencyList : Fongf2.Graph.Graph -> Shape Msg
+parseAdjacencyList graph =
+    List.indexedMap
+        (\idx ( key, node ) ->
+            text (key ++ ": " ++ Simiones.DownloadTxt.edgeListToString node.edges)
+                |> selectable
+                |> size 4
+                |> filled black
+                |> move ( 0, -5 * toFloat idx )
+        )
+        (Dict.toList graph)
+        |> group
 
 
 view : Model -> Collage Msg

@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "elm-live src/Main.elm --open --start-page=dist/index.html -- --output=dist/index.html",
-    "build": "elm make src/Main.elm --optimize --output=dist/index.html",
+    "build": "elm make src/Main.elm --optimize --output=dist/index.html && cp -r svg dist/svg",
     "elm-format": "npx elm-format src --yes",
     "test": "echo \"Error: no test specified\" && exit 1",
     "prepare": "is-ci || husky install"

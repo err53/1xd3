@@ -59,6 +59,13 @@ update msg model =
 
                         _ ->
                             model.mouseState
+                , debug =
+                    case model.mouseState of
+                        EdgeDragging _ ->
+                            "edge dragging"
+
+                        _ ->
+                            "nothing"
             }
 
         -- Change the mouse state to EdgeDragging when
@@ -72,6 +79,7 @@ update msg model =
 
                         _ ->
                             model.mouseState
+                , debug = "added edge"
             }
 
         LetGo ->
@@ -84,6 +92,7 @@ update msg model =
                     { model
                         | coord = Fongf2.Util.add model.coord delta
                         , mouseState = Waiting
+                        , debug = "still dragging"
 
                         --   , debug = "( " ++ String.fromFloat f ++ ", " ++ String.fromFloat s ++ " )"
                     }
@@ -91,19 +100,24 @@ update msg model =
                 EdgeDragging delta ->
                     { model
                         | mouseState = Waiting
+                        , debug = "stopped dragging"
                     }
 
                 _ ->
-                    model
+                    { model
+                        | debug = "still dragging 2"
+                    }
 
         Entered ->
             { model
                 | node = renderNode True model.key
+                , debug = "entered"
             }
 
         Left ->
             { model
                 | node = renderNode False model.key
+                , debug = "left"
             }
 
 
@@ -182,10 +196,11 @@ myShapes model =
     in
     [ model.node
         |> move coord
-    , text model.debug
-        |> GraphicSVG.size 4
-        |> filled black
-        |> move ( 0, 20 )
+
+    -- , text model.debug
+    --     |> GraphicSVG.size 4
+    --     |> filled black
+    --     |> move ( 0, -50 )
     , rect model.width model.height
         |> filled white
         |> makeTransparent 0
@@ -193,7 +208,8 @@ myShapes model =
         -- TODO releasing the mouse while moving does not release the circle
         |> notifyMouseMoveAt NewNodeCoord
         |> notifyMouseUp LetGo
-        |> notifyLeave LetGo
+
+    -- |> notifyLeave LetGo
     ]
 
 
