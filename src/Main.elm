@@ -216,7 +216,7 @@ downloadButton =
     group
         [ roundedRect 36 26 2
             |> filled grey
-        , text "Export/Import"
+        , text "Download"
             |> centered
             |> size 4
             |> filled black
