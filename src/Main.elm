@@ -216,7 +216,7 @@ downloadButton =
     group
         [ roundedRect 36 26 2
             |> filled grey
-        , text "Download"
+        , text "Download as .csv"
             |> centered
             |> size 4
             |> filled black
